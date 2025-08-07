@@ -1,0 +1,65 @@
+model Collection {
+  id                    Int       @id @default(autoincrement())
+  transactionID            String    @unique // Reference Number
+  collectionDate       DateTime  @default(now()) // Date of collection
+  
+  // Customer/Client Information
+  customerName         String    // Name/Particulars from CSV
+  
+  // Delivery and Invoice Information
+  deliveryReference    String?   // Delivery Reference
+  saleDate            DateTime? // DR/SI DATE
+  areaCode            String?   // AREA CODE
+  
+  // PSR Information
+  psr                 PSR       @relation(fields: [psrId], references: [id], onDelete: Restrict)
+  psrId               Int       // PSR relationship
+  
+  // Product Information
+  productName         String    // Product name
+  quantity            Int       // QTY
+  pricePerUnit        Decimal   @db.Decimal(10, 2) // Price per Unit
+  invoiceAmount       Decimal   @db.Decimal(10, 2) // Invoice Amount
+  
+  // Payment Information
+  paymentDetails      String?   // Payment Details
+  checkDate          DateTime? // Check Date
+  paymentAmount      Decimal   @db.Decimal(10, 2) @default(0.00) // Amount paid
+  
+  // Deductions and Adjustments
+  creditableWithholdingTax Decimal @db.Decimal(10, 2) @default(0.00) // Creditable Withholding Tax
+  serviceChargeOtherDeductions Decimal @db.Decimal(10, 2) @default(0.00) // Service Charge/Other Deductions
+  excessPenalty      Decimal   @db.Decimal(10, 2) @default(0.00) // Excess/Penalty
+  
+  // Deposit Information
+  depositDate        DateTime? // Deposit Date
+  amountPerDepositSlip Decimal @db.Decimal(10, 2) @default(0.00) // Amount Per Deposit Slip
+  
+  // Calculated Fields
+  salesGross         Decimal   @db.Decimal(10, 2) // Sales (Gross)
+  netAmount          Decimal   @db.Decimal(10, 2) // Calculated net amount after deductions
+  
+  // User Accountability
+  createdBy          User      @relation("CollectionCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById        Int
+  updatedBy          User?     @relation("CollectionUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedById        Int?
+  
+  // Status and Audit
+  status             CollectionStatus @default(PENDING)
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Optional fields
+  notes              String?   // Additional notes
+  
+  @@index([transactionID])
+  @@index([psrId])
+  @@index([collectionDate])
+  @@index([status])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([areaCode])
+  @@map("collections")
+}

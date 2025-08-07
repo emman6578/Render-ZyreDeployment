@@ -1,0 +1,13 @@
+model Store {
+  id            Int               @id @default(autoincrement())
+  name        String
+  description String?
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+
+  isActive     Boolean   @default(true)
+
+  
+  // Store can have multiple users
+  users       User[]
+}

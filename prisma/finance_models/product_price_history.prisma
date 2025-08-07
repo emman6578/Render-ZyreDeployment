@@ -1,0 +1,24 @@
+model ProductPriceHistory {
+  id                Int      @id @default(autoincrement())
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId         Int
+  
+  // Previous values for comparison
+  previousCostPrice    Decimal? @db.Decimal(10, 2)
+  previousRetailPrice  Decimal? @db.Decimal(10, 2)
+
+  averageCostPrice  Decimal  @db.Decimal(10, 2)
+  averageRetailPrice Decimal @db.Decimal(10, 2)
+  
+  // User accountability for price changes
+  createdBy         User     @relation("PriceHistoryCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById       Int
+  
+  effectiveDate     DateTime @default(now())
+  reason            String?  // Optional: reason for price change
+  
+  @@index([productId])
+  @@index([effectiveDate])
+  @@index([createdById])
+  @@map("product_price_history")
+}

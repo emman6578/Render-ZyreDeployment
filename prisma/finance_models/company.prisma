@@ -1,0 +1,9 @@
+model Company {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  isActive     Boolean   @default(true)
+
+  products Product[]
+  
+  @@map("companies")
+}

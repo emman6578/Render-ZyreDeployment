@@ -1,0 +1,43 @@
+model PurchaseEdit {
+  id            Int       @id @default(autoincrement())
+  
+  // What was edited - Purchase or PurchaseItems
+  editType      PurchaseEditType
+  
+  // Reference to the original record
+  referenceNumber String? // Reference for the Purchase transaction id
+  purchaseId    Int?      // For Purchase table edits
+  purchaseItemId Int?     // For PurchaseItems table edits
+  batchNumber String? // Optional: batch number for context
+  genericName String? // Optional: generic name for context
+  brandName String? // Optional: brand name for context
+  
+  // What action was performed
+  action        EditAction
+  
+  // Multiple field changes stored as JSON
+  changedFields Json      // Structure: {"fieldName": {"old": "value", "new": "value"}}
+
+  
+  // Context and metadata
+  reason        String?   // Optional reason for the change
+  description   String?   // Additional description of the change
+  
+  // User accountability
+  editedBy      User      @relation("PurchaseEditCreatedBy", fields: [editedById], references: [id], onDelete: Restrict)
+  editedById    Int
+  
+  // Audit trail
+  editedAt      DateTime  @default(now())
+  
+  
+
+  
+  @@index([purchaseId])
+  @@index([purchaseItemId])
+  @@index([editType])
+  @@index([action])
+  @@index([editedById])
+  @@index([editedAt])
+  @@map("purchase_edits")
+}

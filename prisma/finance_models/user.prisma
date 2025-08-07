@@ -1,0 +1,76 @@
+model User {
+  id            Int               @id @default(autoincrement())
+  fullname   String
+  email      String   @unique
+  password   String   // Should be hashed
+  
+  // Authentication-related fields
+  isEmailVerified Boolean @default(false)
+  resetToken     String?  @unique // For password reset
+  resetTokenExpiry DateTime?
+  lastLogin      DateTime?
+  
+  // Session management
+  sessions Session[]
+  
+  created    DateTime @default(now())
+  updated    DateTime @updatedAt
+  
+  // User has a role
+  role       Role     @relation(fields: [roleId], references: [id])
+  roleId     Int
+  
+  // User can be assigned to multiple stores
+  stores     Store[]
+  
+  // Only applicable for ACCOUNTANT role
+  position   Position? @relation(fields: [positionId], references: [id])
+  positionId Int?
+
+    isActive     Boolean   @default(true)
+
+  
+  // User accountability relations for Products
+  createdProducts        Product[] @relation("ProductCreatedBy")
+  updatedProducts        Product[] @relation("ProductUpdatedBy")
+  priceHistoryEntries    ProductPriceHistory[] @relation("PriceHistoryCreatedBy")
+  
+  // User accountability relations for Inventory
+  createdInventoryBatches   InventoryBatch[]  @relation("InventoryBatchCreatedBy")
+  updatedInventoryBatches   InventoryBatch[]  @relation("InventoryBatchUpdatedBy")
+  createdInventoryItems     InventoryItem[]   @relation("InventoryItemCreatedBy")
+  updatedInventoryItems     InventoryItem[]   @relation("InventoryItemUpdatedBy")
+  inventoryMovements        InventoryMovement[] @relation("MovementCreatedBy")
+
+  ActivityLog ActivityLog[]
+
+  InventoryPriceChangeHistory InventoryPriceChangeHistory[] @relation("PriceHistoryCreatedBy")
+
+  createdPurchases Purchase[] @relation("PurchaseCreateBy")
+  updatedPurchases Purchase[] @relation("PurchaseUpdatedBy")
+
+  PurchaseItemsCreateBy PurchaseItems[] @relation("PurchaseItemsCreatedBy")
+  PurchaseItemsUpdatedBy PurchaseItems[] @relation("PurchaseItemsUpdatedBy")
+
+  purchaseEdits PurchaseEdit[] @relation("PurchaseEditCreatedBy")
+  processedReturns PurchaseReturn[] @relation("PurchaseReturnProcessedBy")
+  approvedReturns  PurchaseReturn[] @relation("PurchaseReturnApprovedBy")
+
+  productTransactions ProductTransaction[]
+
+  createdPSRs          PSR[]          @relation("PSRCreatedBy")
+  updatedPSRs          PSR[]          @relation("PSRUpdatedBy")
+  createdSales         Sales[]        @relation("SalesCreatedBy")
+  updatedSales         Sales[]        @relation("SalesUpdatedBy")  
+  
+  createdCustomers     Customer[]     @relation("CustomerCreatedBy")
+  updatedCustomers     Customer[]     @relation("CustomerUpdatedBy")
+  
+  receivedPayments     SalesPayment[] @relation("PaymentReceivedBy")
+  
+  processedSalesReturns SalesReturn[] @relation("SalesReturnProcessedBy")
+  approvedSalesReturns  SalesReturn[] @relation("SalesReturnApprovedBy")
+
+   createdCollections   Collection[] @relation("CollectionCreatedBy")
+  updatedCollections   Collection[] @relation("CollectionUpdatedBy")
+}

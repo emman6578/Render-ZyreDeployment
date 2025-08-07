@@ -1,0 +1,13 @@
+model Role {
+  id            Int               @id @default(autoincrement())
+  name        String   @unique // SUPERADMIN, ADMIN, ACCOUNTANT, PHARMACIST, CASHIER
+  description String?
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+
+    isActive     Boolean   @default(true)
+
+  
+  // Role can be assigned to multiple users
+  users       User[]
+}

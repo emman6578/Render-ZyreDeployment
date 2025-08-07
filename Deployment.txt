@@ -1,0 +1,52 @@
+Deployment Guide:
+
+1. Change the .env for Deployment variables
+2. Look for Database on Prisma if Production Environment Matches the same Database used
+3. After configuring the Database run prisma migrations
+3.1 npx prisma migrate dev --name "Deployment" - to migrate the latest changes on the Database
+3.2 npx prisma migrate reset - this will reset the database and populate the the db using seeder file
+3.3 npx prisma generate - to make sure prisma configured properly
+4. change the module_alias route on the package.json to direct to dist folder for deployment: Currently directing to src which used on development
+5. npm run build - to check error before deploying
+6. npm run start - to make sure that this has no error
+7. run git add .
+7.1 git commit -m "deploying"
+7.2 git push origin main
+8. Add additional info if error was encountered deploying this service
+
+
+Additional:
+1. if Frontend url is changed also change the url from the env and also implicit declare it on the server.ts (CORS part: allowedOrigins)
+
+
+
+
+
+
+
+DEPLOYMENT ALIAS
+
+
+  "_moduleAliases": {
+    "@controllers": "dist/controllers",
+    "@config": "dist/config",
+    "@middlewares": "dist/middlewares",
+    "@models": "dist/models",
+    "@routes": "dist/routes",
+    "@services": "dist/services",
+    "@utils": "dist/utils"
+  },
+
+
+
+DEVELOPMENT ALIAS
+
+    "_moduleAliases": {
+    "@controllers": "dist/controllers",
+    "@config": "dist/config",
+    "@middlewares": "dist/middlewares",
+    "@models": "dist/models",
+    "@routes": "dist/routes",
+    "@services": "dist/services",
+    "@utils": "dist/utils"
+  },

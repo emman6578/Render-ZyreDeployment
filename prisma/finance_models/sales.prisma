@@ -1,0 +1,94 @@
+model Sales {
+  id             Int       @id @default(autoincrement())
+  transactionID String   @unique // Individual sale reference
+   requestHash    String?   @unique
+  
+  // REQUIRED: Reference to specific inventory item being sold
+  inventoryItem  InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  inventoryItemId Int
+  
+  // Product information (denormalized for performance and historical accuracy)
+  productId      Int       // Reference to product
+  genericName    String    // Snapshot of product details at time of sale
+  brandName      String
+  companyName    String
+  
+  // Batch information (automatically derived from inventory item)
+  batchNumber    String    // From inventoryItem.batch.batchNumber
+  expiryDate     DateTime  // From inventoryItem.batch.expiryDate
+  supplierName   String    // From inventoryItem.batch.supplier.name
+  
+  // Customer Information
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customerId     Int?
+  customerName   String?   // For walk-in customers without customer record
+  classification String?   // Government, Private etc.
+  
+  // Location and Territory
+  district       District  @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  districtId     Int
+  areaCode      String?
+  
+  // Sales Representative
+  psr            PSR       @relation(fields: [psrId], references: [id], onDelete: Restrict)
+  psrId          Int
+  
+  // Quantity and Pricing (for this specific inventory item)
+  quantity       Int       // Quantity sold from this inventory item
+  unitCostPrice  Decimal   @db.Decimal(10, 2)  // Cost price from inventory item
+  unitRetailPrice Decimal  @db.Decimal(10, 2)  // Retail price from inventory item
+  unitDiscount   Decimal   @db.Decimal(10, 2) @default(0.00)
+  unitFinalPrice Decimal   @db.Decimal(10, 2)  // Final price after discount 
+  
+  // Payment Information
+  paymentTerms   PaymentTerms @default(CASH)
+  paymentMethod  PaymentMethod @default(CASH)
+  amountPaid     Decimal    @db.Decimal(10, 2) @default(0.00)
+  balance        Decimal    @db.Decimal(10, 2) @default(0.00)
+  dueDate        DateTime?  // For credit sales
+  
+  // Document Information
+  invoiceNumber  String?    // Can be same for grouped sales
+  documentType   String?    // e.g., "INVOICE", "RECEIPT", "DELIVERY_RECEIPT"
+  
+  // Transaction grouping (optional - for linking related sales)
+  transactionGroup String?  // UUID or reference to group multiple sales together
+  
+  // Dates
+  saleDate       DateTime   @default(now())
+  pulloutDate    DateTime?  // When product was pulled from inventory
+  
+  // User Accountability
+  createdBy      User       @relation("SalesCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById    Int
+  updatedBy      User?      @relation("SalesUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedById    Int?
+  
+  // Status and Audit
+  status         SalesStatus @default(ACTIVE)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  isActive       Boolean    @default(true)
+  
+  // Additional tracking fields
+  notes          String?    // Additional notes for this sale
+  
+  // Relations
+  payments       SalesPayment[]
+  returns        SalesReturn[]
+  
+   @@index([requestHash])
+  @@index([inventoryItemId])
+  @@index([productId])
+  @@index([customerId])
+  @@index([districtId])
+  @@index([psrId])
+  @@index([saleDate])
+  @@index([status])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([paymentTerms])
+  @@index([transactionGroup])
+  @@index([batchNumber])
+  @@map("sales")
+}

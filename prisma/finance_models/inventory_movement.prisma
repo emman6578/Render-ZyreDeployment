@@ -1,0 +1,33 @@
+model InventoryMovement {
+  id            Int               @id @default(autoincrement())
+  
+  inventoryItem InventoryItem     @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  inventoryItemId Int
+  
+  movementType  MovementType
+  quantity      Int               // Positive for inbound, negative for outbound
+  reason        String?           // Optional reason for movement
+  referenceId   String?           // Reference to order, return, etc.
+  
+  // Enhanced user accountability
+  createdBy     User              @relation("MovementCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById   Int
+  
+  // Additional tracking fields
+  previousQuantity Int            // Quantity before this movement
+  newQuantity      Int            // Quantity after this movement
+  approvedBy       String?        // Optional: supervisor who approved the movement
+  approvalDate     DateTime?      // Date of approval if required
+  
+  createdAt     DateTime          @default(now())
+  
+  // Optional: IP address and user agent for extra security
+  ipAddress     String?
+  userAgent     String?
+  
+  @@index([inventoryItemId])
+  @@index([movementType])
+  @@index([createdAt])
+  @@index([createdById])
+  @@map("inventory_movements")
+}

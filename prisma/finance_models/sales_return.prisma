@@ -1,0 +1,37 @@
+model SalesReturn {
+  id             Int       @id @default(autoincrement())
+  transactionID String   @unique
+  
+  // Reference to original sale (now points directly to the sales record)
+  originalSale   Sales     @relation(fields: [originalSaleId], references: [id], onDelete: Restrict)
+  originalSaleId Int
+  
+  // Return Information
+  returnQuantity Int
+  returnPrice    Decimal   @db.Decimal(10, 2)
+  returnReason   String
+  returnDate     DateTime  @default(now())
+  
+  // User Accountability
+  processedBy    User      @relation("SalesReturnProcessedBy", fields: [processedById], references: [id], onDelete: Restrict)
+  processedById  Int
+  approvedBy     User?     @relation("SalesReturnApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+  approvedById   Int?
+  
+  // Status and Audit
+  status         SalesReturnStatus @default(PENDING)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Additional fields
+  notes          String?
+  refundAmount   Decimal?  @db.Decimal(10, 2)
+  restockable    Boolean   @default(true)
+  
+  @@index([originalSaleId])
+  @@index([returnDate])
+  @@index([status])
+  @@index([processedById])
+  @@index([approvedById])
+  @@map("sales_returns")
+}

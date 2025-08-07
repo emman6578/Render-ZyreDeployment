@@ -1,0 +1,25 @@
+model InventoryPriceChangeHistory {
+  id                Int      @id @default(autoincrement())
+  
+ inventoryItem       InventoryItem     @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  inventoryItemId     Int
+  
+  // Previous values for comparison
+  previousCostPrice    Decimal? @db.Decimal(10, 2)
+  previousRetailPrice  Decimal? @db.Decimal(10, 2)
+
+  averageCostPrice  Decimal  @db.Decimal(10, 2)
+  averageRetailPrice Decimal @db.Decimal(10, 2)
+  
+  // User accountability for price changes
+  createdBy         User     @relation("PriceHistoryCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById       Int
+  
+  effectiveDate     DateTime @default(now())
+  reason            String?  // Optional: reason for price change
+  
+  @@index([inventoryItemId])
+  @@index([effectiveDate])
+  @@index([createdById])
+  @@map("inventory_price_history")
+}

@@ -1,0 +1,28 @@
+model ActivityLog {
+  id            Int       @id @default(autoincrement())
+
+  // Who did the action
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
+
+  // What resource (table/model) was affected
+  model         String    // e.g. "Product", "InventoryItem", etc.
+  recordId      Int?      // Optional: which specific record
+
+  // What was the action
+  action        ActionType
+
+  // Details about what changed or what was done
+  description   String?
+
+  // Optional context (e.g. route, IP, device)
+  ipAddress     String?
+  userAgent     String?
+
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([model])
+  @@index([action])
+  @@map("activity_logs")
+}

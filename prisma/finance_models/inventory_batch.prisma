@@ -1,0 +1,55 @@
+model InventoryBatch {
+  id             Int       @id @default(autoincrement())
+  referenceNumber String @unique
+
+  
+  // Batch-level information (shared across all products in this batch)
+  batchNumber    String    
+  supplier       Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierId     Int
+  district       District  @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  districtId     Int
+  
+  
+  // Document information
+  dt             String?   // Document type 
+  invoiceNumber             String?   // Invoice number
+  
+  // Batch-level dates
+  invoiceDate  DateTime //invoice date
+  expiryDate     DateTime
+  manufacturingDate DateTime? // Optional manufacturing date
+  
+  // User accountability fields
+  createdBy      User      @relation("InventoryBatchCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById    Int
+  updatedBy      User?     @relation("InventoryBatchUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedById    Int?
+  
+  // Status and audit
+  status         InventoryStatus @default(ACTIVE)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Additional accountability fields
+  receivedBy     String?   // Person who physically received the inventory
+  verifiedBy     String?   // Person who verified the inventory receipt
+  verificationDate DateTime? // Date when inventory was verified
+  
+  // Relations - ONE batch can have MANY products
+  items          InventoryItem[]
+
+  isActive     Boolean   @default(true)
+
+   
+  @@index([supplierId])
+  @@index([districtId])
+  @@index([expiryDate])
+  @@index([batchNumber])
+  @@index([status])
+  @@index([createdById])
+  @@index([updatedById])
+  @@unique([supplierId, batchNumber]) // Prevent duplicate batch numbers from same supplier
+  @@map("inventory_batches")
+
+}

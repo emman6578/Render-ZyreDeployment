@@ -1,0 +1,17 @@
+model Session {
+  id            Int               @id @default(autoincrement())
+  token        String   @unique // Session token
+  expires      DateTime
+
+   csrfToken            String?
+  csrfTokenExpiresAt   DateTime?
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  
+  userAgent    String?  // Browser/device info
+  ipAddress    String?
+  
+  created      DateTime @default(now())
+  updated      DateTime @updatedAt
+}

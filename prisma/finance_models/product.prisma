@@ -1,0 +1,47 @@
+model Product {
+  id           Int       @id @default(autoincrement())
+  image        String?     
+  
+  // Foreign keys (categoryId and category relation removed)
+  generic        Generic     @relation(fields: [genericId], references: [id], onDelete: Restrict)
+  genericId      Int
+  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  brandId      Int
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  companyId    Int
+  
+  // Stock and pricing (computed/cached values)
+  safetyStock              Int       @default(0)
+  averageCostPrice      Decimal   @db.Decimal(10, 2)
+  averageRetailPrice    Decimal   @db.Decimal(10, 2)
+  
+  // User accountability fields
+  createdBy    User      @relation("ProductCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById  Int
+  updatedBy    User?     @relation("ProductUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedById  Int?
+  
+  // Audit fields
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  isActive     Boolean   @default(true)
+  
+  // Optional: Track reasons for changes
+  lastUpdateReason String? // Reason for the last update
+  
+  // Relations - UPDATED: Many-to-many with categories
+  categories   Category[] 
+  inventoryItems InventoryItem[]
+  priceHistory ProductPriceHistory[]
+  transactions      ProductTransaction[]
+    
+  PurchaseItems PurchaseItems[]
+
+  @@index([companyId])
+  @@index([brandId])
+  @@index([isActive])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("products")
+
+}

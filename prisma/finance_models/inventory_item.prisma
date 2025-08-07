@@ -1,0 +1,44 @@
+model InventoryItem {
+  id             Int       @id @default(autoincrement())
+  
+  // References to batch and product
+  batch          InventoryBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batchId        Int
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId      Int
+  
+  // Product-specific quantities and pricing within this batch
+  initialQuantity Int      // Original quantity received for this product
+  currentQuantity Int      // Current available quantity for this product
+  
+  costPrice      Decimal   @db.Decimal(10, 2)  // Cost price for this product
+  retailPrice    Decimal   @db.Decimal(10, 2)  // Retail price for this product
+  
+  // User accountability fields
+  createdBy      User      @relation("InventoryItemCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById    Int
+  updatedBy      User?     @relation("InventoryItemUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedById    Int?
+  
+  // Status and audit
+  status         InventoryStatus @default(ACTIVE)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Optional: Track reasons for changes
+  lastUpdateReason String? // Reason for the last update
+  
+  // Relations
+  movements      InventoryMovement[]
+  InventoryPriceChangeHistory InventoryPriceChangeHistory[]
+  sales          Sales[]    
+  
+  @@index([batchId])
+  @@index([productId])
+  @@index([status])
+  @@index([createdById])
+  @@index([updatedById])
+  @@unique([batchId, productId]) // One product can only appear once per batch
+  @@map("inventory_items")
+  
+}

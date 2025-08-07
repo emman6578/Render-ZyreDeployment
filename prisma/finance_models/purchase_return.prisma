@@ -1,0 +1,43 @@
+model PurchaseReturn {
+  id             Int       @id @default(autoincrement())
+  referenceNumber String @unique
+  
+  // Reference to original purchase - this will pull most of the data
+  originalPurchase Purchase @relation(fields: [originalPurchaseId], references: [id], onDelete: Restrict)
+  originalPurchaseId Int
+  
+  // Reference to specific purchase item being returned
+  originalPurchaseItem PurchaseItems @relation(fields: [originalPurchaseItemId], references: [id], onDelete: Restrict)
+  originalPurchaseItemId Int
+  
+  // Return-specific information
+  returnQuantity Int       // How many items are being returned
+  returnPrice    Decimal   @db.Decimal(10, 2) // Price for the returned items
+  returnReason   String    // Reason for return (expired, damaged, etc.)
+  
+  // Return dates
+  returnDate     DateTime  @default(now()) // When the return was processed
+  
+  // User accountability fields
+  processedBy    User      @relation("PurchaseReturnProcessedBy", fields: [processedById], references: [id], onDelete: Restrict)
+  processedById  Int
+  approvedBy     User?     @relation("PurchaseReturnApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+  approvedById   Int?
+  
+  // Status and audit
+  status         PurchaseReturnStatus @default(PENDING)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Additional fields for tracking
+  notes          String?   // Additional notes about the return
+  refundAmount   Decimal?  @db.Decimal(10, 2) // Actual refund amount if different from return price
+  
+  @@index([originalPurchaseId])
+  @@index([originalPurchaseItemId])
+  @@index([returnDate])
+  @@index([status])
+  @@index([processedById])
+  @@index([approvedById])
+  @@map("purchase_returns")
+}

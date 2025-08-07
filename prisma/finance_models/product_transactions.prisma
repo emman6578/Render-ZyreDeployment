@@ -1,0 +1,38 @@
+model ProductTransaction {
+  id                Int                    @id @default(autoincrement())
+  referenceNumber String?
+  
+  // Core Transaction Details
+  product           Product                @relation(fields: [productId], references: [id])
+  productId         Int
+  transactionType   ProductTransactionType
+  transactionDate   DateTime               @default(now())
+  
+  // Quantity Changes
+  quantityIn        Int?                   // For inbound movements (e.g., purchases)
+  quantityOut       Int?                   // For outbound movements (e.g., sales, returns)
+  
+  // Price Information
+  costPrice         Decimal?               @db.Decimal(10, 2)
+  retailPrice       Decimal?               @db.Decimal(10, 2)
+  
+  // User Accountability
+  user              User                   @relation(fields: [userId], references: [id])
+  userId            Int
+  
+  // Source of the Transaction (Polymorphic Relation)
+  sourceModel       String                 // e.g., "PurchaseItems", "InventoryMovement"
+  sourceId          Int                    // The ID of the record in the source model
+  
+  // Contextual Description
+  description       String
+  
+  createdAt         DateTime               @default(now())
+
+  @@index([productId])
+  @@index([transactionType])
+  @@index([transactionDate])
+  @@index([userId])
+  @@index([sourceModel, sourceId])
+  @@map("product_transactions")
+}

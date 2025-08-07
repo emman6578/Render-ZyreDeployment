@@ -1,0 +1,1209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+//  provider = "mysql"
+//  provider = "postgresql"
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// AUTHENTICATION MODELS
+// ==========================================
+
+// model User {
+//   id            Int               @id @default(autoincrement())
+//   fullname   String
+//   email      String   @unique
+//   password   String   // Should be hashed
+  
+//   // Authentication-related fields
+//   isEmailVerified Boolean @default(false)
+//   resetToken     String?  @unique // For password reset
+//   resetTokenExpiry DateTime?
+//   lastLogin      DateTime?
+  
+//   // Session management
+//   sessions Session[]
+  
+//   created    DateTime @default(now())
+//   updated    DateTime @updatedAt
+  
+//   // User has a role
+//   role       Role     @relation(fields: [roleId], references: [id])
+//   roleId     Int
+  
+//   // User can be assigned to multiple stores
+//   stores     Store[]
+  
+//   // Only applicable for ACCOUNTANT role
+//   position   Position? @relation(fields: [positionId], references: [id])
+//   positionId Int?
+
+//     isActive     Boolean   @default(true)
+
+  
+//   // User accountability relations for Products
+//   createdProducts        Product[] @relation("ProductCreatedBy")
+//   updatedProducts        Product[] @relation("ProductUpdatedBy")
+//   priceHistoryEntries    ProductPriceHistory[] @relation("PriceHistoryCreatedBy")
+  
+//   // User accountability relations for Inventory
+//   createdInventoryBatches   InventoryBatch[]  @relation("InventoryBatchCreatedBy")
+//   updatedInventoryBatches   InventoryBatch[]  @relation("InventoryBatchUpdatedBy")
+//   createdInventoryItems     InventoryItem[]   @relation("InventoryItemCreatedBy")
+//   updatedInventoryItems     InventoryItem[]   @relation("InventoryItemUpdatedBy")
+//   inventoryMovements        InventoryMovement[] @relation("MovementCreatedBy")
+
+//   ActivityLog ActivityLog[]
+
+//   InventoryPriceChangeHistory InventoryPriceChangeHistory[] @relation("PriceHistoryCreatedBy")
+
+//   createdPurchases Purchase[] @relation("PurchaseCreateBy")
+//   updatedPurchases Purchase[] @relation("PurchaseUpdatedBy")
+
+//   PurchaseItemsCreateBy PurchaseItems[] @relation("PurchaseItemsCreatedBy")
+//   PurchaseItemsUpdatedBy PurchaseItems[] @relation("PurchaseItemsUpdatedBy")
+
+//   purchaseEdits PurchaseEdit[] @relation("PurchaseEditCreatedBy")
+//   processedReturns PurchaseReturn[] @relation("PurchaseReturnProcessedBy")
+//   approvedReturns  PurchaseReturn[] @relation("PurchaseReturnApprovedBy")
+
+//   productTransactions ProductTransaction[]
+
+//   createdPSRs          PSR[]          @relation("PSRCreatedBy")
+//   updatedPSRs          PSR[]          @relation("PSRUpdatedBy")
+//   createdSales         Sales[]        @relation("SalesCreatedBy")
+//   updatedSales         Sales[]        @relation("SalesUpdatedBy")  
+  
+//   createdCustomers     Customer[]     @relation("CustomerCreatedBy")
+//   updatedCustomers     Customer[]     @relation("CustomerUpdatedBy")
+  
+//   receivedPayments     SalesPayment[] @relation("PaymentReceivedBy")
+  
+//   processedSalesReturns SalesReturn[] @relation("SalesReturnProcessedBy")
+//   approvedSalesReturns  SalesReturn[] @relation("SalesReturnApprovedBy")
+
+//    createdCollections   Collection[] @relation("CollectionCreatedBy")
+//   updatedCollections   Collection[] @relation("CollectionUpdatedBy")
+// }
+
+// model Role {
+//   id            Int               @id @default(autoincrement())
+//   name        String   @unique // SUPERADMIN, ADMIN, ACCOUNTANT, PHARMACIST, CASHIER
+//   description String?
+//   created     DateTime @default(now())
+//   updated     DateTime @updatedAt
+
+//     isActive     Boolean   @default(true)
+
+  
+//   // Role can be assigned to multiple users
+//   users       User[]
+// }
+
+// model Store {
+//   id            Int               @id @default(autoincrement())
+//   name        String
+//   description String?
+//   created     DateTime @default(now())
+//   updated     DateTime @updatedAt
+
+//   isActive     Boolean   @default(true)
+
+  
+//   // Store can have multiple users
+//   users       User[]
+// }
+
+// model Position {
+//   id            Int               @id @default(autoincrement())
+//   name        String   @unique
+//   description String?
+//   created     DateTime @default(now())
+//   updated     DateTime @updatedAt
+
+//     isActive     Boolean   @default(true)
+
+  
+//   // Position can be assigned to multiple users
+//   users       User[]
+// }
+
+// model Session {
+//   id            Int               @id @default(autoincrement())
+//   token        String   @unique // Session token
+//   expires      DateTime
+
+//    csrfToken            String?
+//   csrfTokenExpiresAt   DateTime?
+  
+//   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   userId       Int
+  
+//   userAgent    String?  // Browser/device info
+//   ipAddress    String?
+  
+//   created      DateTime @default(now())
+//   updated      DateTime @updatedAt
+// }
+
+// ==========================================
+// PRODUCTS MODELS
+// ==========================================
+
+// model Product {
+//   id           Int       @id @default(autoincrement())
+//   image        String?     
+  
+//   // Foreign keys (categoryId and category relation removed)
+//   generic        Generic     @relation(fields: [genericId], references: [id], onDelete: Restrict)
+//   genericId      Int
+//   brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Restrict)
+//   brandId      Int
+//   company      Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+//   companyId    Int
+  
+//   // Stock and pricing (computed/cached values)
+//   safetyStock              Int       @default(0)
+//   averageCostPrice      Decimal   @db.Decimal(10, 2)
+//   averageRetailPrice    Decimal   @db.Decimal(10, 2)
+  
+//   // User accountability fields
+//   createdBy    User      @relation("ProductCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById  Int
+//   updatedBy    User?     @relation("ProductUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+//   updatedById  Int?
+  
+//   // Audit fields
+//   createdAt    DateTime  @default(now())
+//   updatedAt    DateTime  @updatedAt
+//   isActive     Boolean   @default(true)
+  
+//   // Optional: Track reasons for changes
+//   lastUpdateReason String? // Reason for the last update
+  
+//   // Relations - UPDATED: Many-to-many with categories
+//   categories   Category[] 
+//   inventoryItems InventoryItem[]
+//   priceHistory ProductPriceHistory[]
+//   transactions      ProductTransaction[]
+    
+//   PurchaseItems PurchaseItems[]
+
+//   @@index([companyId])
+//   @@index([brandId])
+//   @@index([isActive])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@map("products")
+
+// }
+
+// model Company {
+//   id       Int       @id @default(autoincrement())
+//   name     String    @unique
+//   isActive     Boolean   @default(true)
+
+//   products Product[]
+  
+//   @@map("companies")
+// }
+
+// model Brand {
+//   id       Int       @id @default(autoincrement())
+//   name     String    @unique
+//   isActive     Boolean   @default(true)
+//   products Product[]
+  
+  
+//   @@map("brands")
+// }
+
+// model Generic {
+//   id       Int       @id @default(autoincrement())
+//   name     String    @unique
+//   isActive     Boolean   @default(true)
+//   products Product[]
+  
+//   @@map("generics")
+// }
+
+// model Category {
+//   id       Int       @id @default(autoincrement())
+//   name     String    @unique
+//   isActive     Boolean   @default(true)
+//   products Product[]
+  
+//   @@map("categories")
+// }
+
+// model Supplier {
+//   id         Int         @id @default(autoincrement())
+//   name       String      @unique
+//   contact    String?     // Optional contact information
+//   address    String?     // Optional address
+//   isActive     Boolean   @default(true)
+//   inventoryBatches InventoryBatch[]
+//   Purchase Purchase[]
+    
+//   @@map("suppliers")
+ 
+// }
+
+// model District {
+//   id        Int         @id @default(autoincrement())
+//   name      String      @unique
+//   code      String?     @unique // Optional district code
+//   isActive     Boolean   @default(true)
+  
+//   inventoryBatches InventoryBatch[]
+//   Purchase Purchase[]
+
+ 
+//   sales            Sales[]
+  
+//   @@map("districts")
+
+// }
+
+// model ProductPriceHistory {
+//   id                Int      @id @default(autoincrement())
+//   product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+//   productId         Int
+  
+//   // Previous values for comparison
+//   previousCostPrice    Decimal? @db.Decimal(10, 2)
+//   previousRetailPrice  Decimal? @db.Decimal(10, 2)
+
+//   averageCostPrice  Decimal  @db.Decimal(10, 2)
+//   averageRetailPrice Decimal @db.Decimal(10, 2)
+  
+//   // User accountability for price changes
+//   createdBy         User     @relation("PriceHistoryCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById       Int
+  
+//   effectiveDate     DateTime @default(now())
+//   reason            String?  // Optional: reason for price change
+  
+//   @@index([productId])
+//   @@index([effectiveDate])
+//   @@index([createdById])
+//   @@map("product_price_history")
+// }
+
+
+// ==========================================
+// INVENTORY MODELS
+// ==========================================
+
+// model InventoryBatch {
+//   id             Int       @id @default(autoincrement())
+//   referenceNumber String @unique
+
+  
+//   // Batch-level information (shared across all products in this batch)
+//   batchNumber    String    
+//   supplier       Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+//   supplierId     Int
+//   district       District  @relation(fields: [districtId], references: [id], onDelete: Restrict)
+//   districtId     Int
+  
+  
+//   // Document information
+//   dt             String?   // Document type 
+//   invoiceNumber             String?   // Invoice number
+  
+//   // Batch-level dates
+//   invoiceDate  DateTime //invoice date
+//   expiryDate     DateTime
+//   manufacturingDate DateTime? // Optional manufacturing date
+  
+//   // User accountability fields
+//   createdBy      User      @relation("InventoryBatchCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById    Int
+//   updatedBy      User?     @relation("InventoryBatchUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+//   updatedById    Int?
+  
+//   // Status and audit
+//   status         InventoryStatus @default(ACTIVE)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Additional accountability fields
+//   receivedBy     String?   // Person who physically received the inventory
+//   verifiedBy     String?   // Person who verified the inventory receipt
+//   verificationDate DateTime? // Date when inventory was verified
+  
+//   // Relations - ONE batch can have MANY products
+//   items          InventoryItem[]
+
+//   isActive     Boolean   @default(true)
+
+   
+//   @@index([supplierId])
+//   @@index([districtId])
+//   @@index([expiryDate])
+//   @@index([batchNumber])
+//   @@index([status])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@unique([supplierId, batchNumber]) // Prevent duplicate batch numbers from same supplier
+//   @@map("inventory_batches")
+
+// }
+
+// model InventoryItem {
+//   id             Int       @id @default(autoincrement())
+  
+//   // References to batch and product
+//   batch          InventoryBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+//   batchId        Int
+//   product        Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+//   productId      Int
+  
+//   // Product-specific quantities and pricing within this batch
+//   initialQuantity Int      // Original quantity received for this product
+//   currentQuantity Int      // Current available quantity for this product
+  
+//   costPrice      Decimal   @db.Decimal(10, 2)  // Cost price for this product
+//   retailPrice    Decimal   @db.Decimal(10, 2)  // Retail price for this product
+  
+//   // User accountability fields
+//   createdBy      User      @relation("InventoryItemCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById    Int
+//   updatedBy      User?     @relation("InventoryItemUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+//   updatedById    Int?
+  
+//   // Status and audit
+//   status         InventoryStatus @default(ACTIVE)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Optional: Track reasons for changes
+//   lastUpdateReason String? // Reason for the last update
+  
+//   // Relations
+//   movements      InventoryMovement[]
+//   InventoryPriceChangeHistory InventoryPriceChangeHistory[]
+//   sales          Sales[]    
+  
+//   @@index([batchId])
+//   @@index([productId])
+//   @@index([status])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@unique([batchId, productId]) // One product can only appear once per batch
+//   @@map("inventory_items")
+  
+// }
+
+// model InventoryMovement {
+//   id            Int               @id @default(autoincrement())
+  
+//   inventoryItem InventoryItem     @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+//   inventoryItemId Int
+  
+//   movementType  MovementType
+//   quantity      Int               // Positive for inbound, negative for outbound
+//   reason        String?           // Optional reason for movement
+//   referenceId   String?           // Reference to order, return, etc.
+  
+//   // Enhanced user accountability
+//   createdBy     User              @relation("MovementCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById   Int
+  
+//   // Additional tracking fields
+//   previousQuantity Int            // Quantity before this movement
+//   newQuantity      Int            // Quantity after this movement
+//   approvedBy       String?        // Optional: supervisor who approved the movement
+//   approvalDate     DateTime?      // Date of approval if required
+  
+//   createdAt     DateTime          @default(now())
+  
+//   // Optional: IP address and user agent for extra security
+//   ipAddress     String?
+//   userAgent     String?
+  
+//   @@index([inventoryItemId])
+//   @@index([movementType])
+//   @@index([createdAt])
+//   @@index([createdById])
+//   @@map("inventory_movements")
+// }
+
+// model InventoryPriceChangeHistory {
+//   id                Int      @id @default(autoincrement())
+  
+//  inventoryItem       InventoryItem     @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+//   inventoryItemId     Int
+  
+//   // Previous values for comparison
+//   previousCostPrice    Decimal? @db.Decimal(10, 2)
+//   previousRetailPrice  Decimal? @db.Decimal(10, 2)
+
+//   averageCostPrice  Decimal  @db.Decimal(10, 2)
+//   averageRetailPrice Decimal @db.Decimal(10, 2)
+  
+//   // User accountability for price changes
+//   createdBy         User     @relation("PriceHistoryCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById       Int
+  
+//   effectiveDate     DateTime @default(now())
+//   reason            String?  // Optional: reason for price change
+  
+//   @@index([inventoryItemId])
+//   @@index([effectiveDate])
+//   @@index([createdById])
+//   @@map("inventory_price_history")
+// }
+
+// ==========================================
+// PURCHASE/s MODELS
+// ==========================================
+
+// model Purchase {
+//   id             Int       @id @default(autoincrement())
+//   referenceNumber String @unique
+
+//   // Batch-level information (shared across all products in this batch)
+//   batchNumber    String    
+//   supplier       Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+//   supplierId     Int
+//   district       District  @relation(fields: [districtId], references: [id], onDelete: Restrict)
+//   districtId     Int
+  
+//   // Document information
+//   dt             String?   // Document type 
+//   invoiceNumber             String?   // Invoice number
+  
+//   // Batch-level dates
+//   invoiceDate  DateTime //invoice date
+//   expiryDate     DateTime
+//   manufacturingDate DateTime? // Optional manufacturing date
+  
+//   // User accountability fields
+//   createdBy      User      @relation("PurchaseCreateBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById    Int
+//   updatedBy      User?     @relation("PurchaseUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+//   updatedById    Int?
+  
+//   // Status and audit
+//   status         PurchaseStatus @default(ACTIVE)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Additional accountability fields
+//   receivedBy     String?   // Person who physically received the inventory
+//   verifiedBy     String?   // Person who verified the inventory receipt
+//   verificationDate DateTime? // Date when inventory was verified
+  
+//   // Relations - ONE batch can have MANY products
+//   items          PurchaseItems[]
+//   returns PurchaseReturn[]
+
+//   isActive     Boolean   @default(true)
+
+  
+//   @@index([supplierId])
+//   @@index([districtId])
+//   @@index([expiryDate])
+//   @@index([batchNumber])
+//   @@index([status])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@unique([supplierId, batchNumber]) // Prevent duplicate batch numbers from same supplier
+//   @@map("purchases")
+// }
+
+// model PurchaseItems {
+//   id             Int       @id @default(autoincrement())
+  
+//   // References to batch and product
+//   batch          Purchase @relation( fields: [batchId], references: [id], onDelete: Cascade)
+//   batchId        Int
+//   product        Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+//   productId      Int
+  
+//   // Product-specific quantities and pricing within this batch
+//   initialQuantity Int      // Original quantity received for this product
+//   currentQuantity Int      // Current available quantity for this product
+  
+//   costPrice      Decimal   @db.Decimal(10, 2)  // Cost price for this product
+//   retailPrice    Decimal   @db.Decimal(10, 2)  // Retail price for this product
+  
+//   // User accountability fields
+//   createdBy      User      @relation("PurchaseItemsCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById    Int
+//   updatedBy      User?     @relation("PurchaseItemsUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+//   updatedById    Int?
+  
+//   // Status and audit
+//   status         PurchaseStatus @default(ACTIVE)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Optional: Track reasons for changes
+//   lastUpdateReason String? // Reason for the last update  
+
+//   //References
+//   returns PurchaseReturn[]
+ 
+  
+//   @@index([batchId])
+//   @@index([productId])
+//   @@index([status])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@unique([batchId, productId]) 
+//   @@map("purchase_items")
+  
+
+// }
+
+// model PurchaseEdit {
+//   id            Int       @id @default(autoincrement())
+  
+//   // What was edited - Purchase or PurchaseItems
+//   editType      PurchaseEditType
+  
+//   // Reference to the original record
+//   referenceNumber String? // Reference for the Purchase transaction id
+//   purchaseId    Int?      // For Purchase table edits
+//   purchaseItemId Int?     // For PurchaseItems table edits
+//   batchNumber String? // Optional: batch number for context
+//   genericName String? // Optional: generic name for context
+//   brandName String? // Optional: brand name for context
+  
+//   // What action was performed
+//   action        EditAction
+  
+//   // Multiple field changes stored as JSON
+//   changedFields Json      // Structure: {"fieldName": {"old": "value", "new": "value"}}
+
+  
+//   // Context and metadata
+//   reason        String?   // Optional reason for the change
+//   description   String?   // Additional description of the change
+  
+//   // User accountability
+//   editedBy      User      @relation("PurchaseEditCreatedBy", fields: [editedById], references: [id], onDelete: Restrict)
+//   editedById    Int
+  
+//   // Audit trail
+//   editedAt      DateTime  @default(now())
+  
+  
+
+  
+//   @@index([purchaseId])
+//   @@index([purchaseItemId])
+//   @@index([editType])
+//   @@index([action])
+//   @@index([editedById])
+//   @@index([editedAt])
+//   @@map("purchase_edits")
+// }
+
+// model PurchaseReturn {
+//   id             Int       @id @default(autoincrement())
+//   referenceNumber String @unique
+  
+//   // Reference to original purchase - this will pull most of the data
+//   originalPurchase Purchase @relation(fields: [originalPurchaseId], references: [id], onDelete: Restrict)
+//   originalPurchaseId Int
+  
+//   // Reference to specific purchase item being returned
+//   originalPurchaseItem PurchaseItems @relation(fields: [originalPurchaseItemId], references: [id], onDelete: Restrict)
+//   originalPurchaseItemId Int
+  
+//   // Return-specific information
+//   returnQuantity Int       // How many items are being returned
+//   returnPrice    Decimal   @db.Decimal(10, 2) // Price for the returned items
+//   returnReason   String    // Reason for return (expired, damaged, etc.)
+  
+//   // Return dates
+//   returnDate     DateTime  @default(now()) // When the return was processed
+  
+//   // User accountability fields
+//   processedBy    User      @relation("PurchaseReturnProcessedBy", fields: [processedById], references: [id], onDelete: Restrict)
+//   processedById  Int
+//   approvedBy     User?     @relation("PurchaseReturnApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+//   approvedById   Int?
+  
+//   // Status and audit
+//   status         PurchaseReturnStatus @default(PENDING)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Additional fields for tracking
+//   notes          String?   // Additional notes about the return
+//   refundAmount   Decimal?  @db.Decimal(10, 2) // Actual refund amount if different from return price
+  
+//   @@index([originalPurchaseId])
+//   @@index([originalPurchaseItemId])
+//   @@index([returnDate])
+//   @@index([status])
+//   @@index([processedById])
+//   @@index([approvedById])
+//   @@map("purchase_returns")
+// }
+
+// ==========================================
+// ACITIVITY LOG MODEL
+// ==========================================
+
+// model ActivityLog {
+//   id            Int       @id @default(autoincrement())
+
+//   // Who did the action
+//   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   userId        Int
+
+//   // What resource (table/model) was affected
+//   model         String    // e.g. "Product", "InventoryItem", etc.
+//   recordId      Int?      // Optional: which specific record
+
+//   // What was the action
+//   action        ActionType
+
+//   // Details about what changed or what was done
+//   description   String?
+
+//   // Optional context (e.g. route, IP, device)
+//   ipAddress     String?
+//   userAgent     String?
+
+//   createdAt     DateTime  @default(now())
+
+//   @@index([userId])
+//   @@index([model])
+//   @@index([action])
+//   @@map("activity_logs")
+// }
+
+// model ProductTransaction {
+//   id                Int                    @id @default(autoincrement())
+//   referenceNumber String?
+  
+//   // Core Transaction Details
+//   product           Product                @relation(fields: [productId], references: [id])
+//   productId         Int
+//   transactionType   ProductTransactionType
+//   transactionDate   DateTime               @default(now())
+  
+//   // Quantity Changes
+//   quantityIn        Int?                   // For inbound movements (e.g., purchases)
+//   quantityOut       Int?                   // For outbound movements (e.g., sales, returns)
+  
+//   // Price Information
+//   costPrice         Decimal?               @db.Decimal(10, 2)
+//   retailPrice       Decimal?               @db.Decimal(10, 2)
+  
+//   // User Accountability
+//   user              User                   @relation(fields: [userId], references: [id])
+//   userId            Int
+  
+//   // Source of the Transaction (Polymorphic Relation)
+//   sourceModel       String                 // e.g., "PurchaseItems", "InventoryMovement"
+//   sourceId          Int                    // The ID of the record in the source model
+  
+//   // Contextual Description
+//   description       String
+  
+//   createdAt         DateTime               @default(now())
+
+//   @@index([productId])
+//   @@index([transactionType])
+//   @@index([transactionDate])
+//   @@index([userId])
+//   @@index([sourceModel, sourceId])
+//   @@map("product_transactions")
+// }
+
+// ==========================================
+// SALES MODELS
+// ==========================================
+
+// model Sales {
+//   id             Int       @id @default(autoincrement())
+//   transactionID String   @unique // Individual sale reference
+//    requestHash    String?   @unique
+  
+//   // REQUIRED: Reference to specific inventory item being sold
+//   inventoryItem  InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+//   inventoryItemId Int
+  
+//   // Product information (denormalized for performance and historical accuracy)
+//   productId      Int       // Reference to product
+//   genericName    String    // Snapshot of product details at time of sale
+//   brandName      String
+//   companyName    String
+  
+//   // Batch information (automatically derived from inventory item)
+//   batchNumber    String    // From inventoryItem.batch.batchNumber
+//   expiryDate     DateTime  // From inventoryItem.batch.expiryDate
+//   supplierName   String    // From inventoryItem.batch.supplier.name
+  
+//   // Customer Information
+//   customer       Customer? @relation(fields: [customerId], references: [id], onDelete: Restrict)
+//   customerId     Int?
+//   customerName   String?   // For walk-in customers without customer record
+  
+//   // Location and Territory
+//   district       District  @relation(fields: [districtId], references: [id], onDelete: Restrict)
+//   districtId     Int
+//   areaCode      String?
+  
+//   // Sales Representative
+//   psr            PSR       @relation(fields: [psrId], references: [id], onDelete: Restrict)
+//   psrId          Int
+  
+//   // Quantity and Pricing (for this specific inventory item)
+//   quantity       Int       // Quantity sold from this inventory item
+//   unitCostPrice  Decimal   @db.Decimal(10, 2)  // Cost price from inventory item
+//   unitRetailPrice Decimal  @db.Decimal(10, 2)  // Retail price from inventory item
+//   unitDiscount   Decimal   @db.Decimal(10, 2) @default(0.00)
+//   unitFinalPrice Decimal   @db.Decimal(10, 2)  // Final price after discount 
+  
+//   // Payment Information
+//   paymentTerms   PaymentTerms @default(CASH)
+//   paymentMethod  PaymentMethod @default(CASH)
+//   amountPaid     Decimal    @db.Decimal(10, 2) @default(0.00)
+//   balance        Decimal    @db.Decimal(10, 2) @default(0.00)
+//   dueDate        DateTime?  // For credit sales
+  
+//   // Document Information
+//   invoiceNumber  String?    // Can be same for grouped sales
+//   documentType   String?    // e.g., "INVOICE", "RECEIPT", "DELIVERY_RECEIPT"
+  
+//   // Transaction grouping (optional - for linking related sales)
+//   transactionGroup String?  // UUID or reference to group multiple sales together
+  
+//   // Dates
+//   saleDate       DateTime   @default(now())
+//   pulloutDate    DateTime?  // When product was pulled from inventory
+  
+//   // User Accountability
+//   createdBy      User       @relation("SalesCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById    Int
+//   updatedBy      User?      @relation("SalesUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+//   updatedById    Int?
+  
+//   // Status and Audit
+//   status         SalesStatus @default(ACTIVE)
+//   createdAt      DateTime   @default(now())
+//   updatedAt      DateTime   @updatedAt
+//   isActive       Boolean    @default(true)
+  
+//   // Additional tracking fields
+//   notes          String?    // Additional notes for this sale
+  
+//   // Relations
+//   payments       SalesPayment[]
+//   returns        SalesReturn[]
+  
+//    @@index([requestHash])
+//   @@index([inventoryItemId])
+//   @@index([productId])
+//   @@index([customerId])
+//   @@index([districtId])
+//   @@index([psrId])
+//   @@index([saleDate])
+//   @@index([status])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@index([paymentTerms])
+//   @@index([transactionGroup])
+//   @@index([batchNumber])
+//   @@map("sales")
+// }
+
+// model Collection {
+//   id                    Int       @id @default(autoincrement())
+//   transactionID            String    @unique // Reference Number
+//   collectionDate       DateTime  @default(now()) // Date of collection
+  
+//   // Customer/Client Information
+//   customerName         String    // Name/Particulars from CSV
+  
+//   // Delivery and Invoice Information
+//   deliveryReference    String?   // Delivery Reference
+//   saleDate            DateTime? // DR/SI DATE
+//   areaCode            String?   // AREA CODE
+  
+//   // PSR Information
+//   psr                 PSR       @relation(fields: [psrId], references: [id], onDelete: Restrict)
+//   psrId               Int       // PSR relationship
+  
+//   // Product Information
+//   productName         String    // Product name
+//   quantity            Int       // QTY
+//   pricePerUnit        Decimal   @db.Decimal(10, 2) // Price per Unit
+//   invoiceAmount       Decimal   @db.Decimal(10, 2) // Invoice Amount
+  
+//   // Payment Information
+//   paymentDetails      String?   // Payment Details
+//   checkDate          DateTime? // Check Date
+//   paymentAmount      Decimal   @db.Decimal(10, 2) @default(0.00) // Amount paid
+  
+//   // Deductions and Adjustments
+//   creditableWithholdingTax Decimal @db.Decimal(10, 2) @default(0.00) // Creditable Withholding Tax
+//   serviceChargeOtherDeductions Decimal @db.Decimal(10, 2) @default(0.00) // Service Charge/Other Deductions
+//   excessPenalty      Decimal   @db.Decimal(10, 2) @default(0.00) // Excess/Penalty
+  
+//   // Deposit Information
+//   depositDate        DateTime? // Deposit Date
+//   amountPerDepositSlip Decimal @db.Decimal(10, 2) @default(0.00) // Amount Per Deposit Slip
+  
+//   // Calculated Fields
+//   salesGross         Decimal   @db.Decimal(10, 2) // Sales (Gross)
+//   netAmount          Decimal   @db.Decimal(10, 2) // Calculated net amount after deductions
+  
+//   // User Accountability
+//   createdBy          User      @relation("CollectionCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById        Int
+//   updatedBy          User?     @relation("CollectionUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+//   updatedById        Int?
+  
+//   // Status and Audit
+//   status             CollectionStatus @default(PENDING)
+//   isActive           Boolean   @default(true)
+//   createdAt          DateTime  @default(now())
+//   updatedAt          DateTime  @updatedAt
+  
+//   // Optional fields
+//   notes              String?   // Additional notes
+  
+//   @@index([transactionID])
+//   @@index([psrId])
+//   @@index([collectionDate])
+//   @@index([status])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@index([areaCode])
+//   @@map("collections")
+// }
+
+// model Customer {
+//   id             Int       @id @default(autoincrement())
+  
+//   // Customer Information
+//   customerName   String
+//   customerType   CustomerType @default(WALK_IN)
+  
+//   // Contact Information
+//   contactPerson  String?
+//   phoneNumber    String?
+//   emailAddress   String?
+
+//   // Credit Information
+//   creditLimit    Decimal?  @db.Decimal(10, 2)
+//   creditTerms    PaymentTerms @default(CASH)
+  
+//   // User Accountability
+//   createdBy      User      @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+//   createdById    Int
+//   updatedBy      User?     @relation("CustomerUpdatedBy", fields: [updatedById], references: [id])
+//   updatedById    Int?
+  
+//   // Status and Audit
+//   isActive       Boolean   @default(true)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Relations
+//   sales          Sales[]
+  
+//   @@index([customerType])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@map("customers")
+// }
+
+// model SalesPayment {
+//   id             Int       @id @default(autoincrement())
+  
+//   // Reference to sale
+//   sale           Sales     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+//   saleId         Int
+  
+//   // Payment Information
+//   paymentMethod  PaymentMethod
+//   paymentAmount  Decimal   @db.Decimal(10, 2)
+//   paymentDate    DateTime  @default(now())
+  
+//   // Payment Details
+//   referenceNumber String?  // Check number, bank reference, etc.
+//   bankName       String?
+//   checkDate      DateTime?
+  
+//   // User Accountability
+//   receivedBy     User      @relation("PaymentReceivedBy", fields: [receivedById], references: [id], onDelete: Restrict)
+//   receivedById   Int
+  
+//   // Status and Audit
+//   status         PaymentStatus @default(PENDING)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Optional fields
+//   notes          String?
+  
+//   @@index([saleId])
+//   @@index([paymentMethod])
+//   @@index([paymentDate])
+//   @@index([status])
+//   @@index([receivedById])
+//   @@map("sales_payments")
+// }
+
+// model SalesReturn {
+//   id             Int       @id @default(autoincrement())
+//   transactionID String   @unique
+  
+//   // Reference to original sale (now points directly to the sales record)
+//   originalSale   Sales     @relation(fields: [originalSaleId], references: [id], onDelete: Restrict)
+//   originalSaleId Int
+  
+//   // Return Information
+//   returnQuantity Int
+//   returnPrice    Decimal   @db.Decimal(10, 2)
+//   returnReason   String
+//   returnDate     DateTime  @default(now())
+  
+//   // User Accountability
+//   processedBy    User      @relation("SalesReturnProcessedBy", fields: [processedById], references: [id], onDelete: Restrict)
+//   processedById  Int
+//   approvedBy     User?     @relation("SalesReturnApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+//   approvedById   Int?
+  
+//   // Status and Audit
+//   status         SalesReturnStatus @default(PENDING)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Additional fields
+//   notes          String?
+//   refundAmount   Decimal?  @db.Decimal(10, 2)
+//   restockable    Boolean   @default(true)
+  
+//   @@index([originalSaleId])
+//   @@index([returnDate])
+//   @@index([status])
+//   @@index([processedById])
+//   @@index([approvedById])
+//   @@map("sales_returns")
+// }
+
+// model PSR {
+//   id             Int       @id @default(autoincrement())
+  
+//   // PSR Information
+//   psrCode        String    @unique
+//   fullName       String
+//   areaCode String?
+
+//   sourceHash   String?
+  
+//   // Employment Information
+//   status         PSRStatus @default(ACTIVE) 
+  
+//   // User Accountability
+//   createdBy      User      @relation("PSRCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+//   createdById    Int
+//   updatedBy      User?     @relation("PSRUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+//   updatedById    Int?
+  
+//   // Status and Audit
+//   isActive       Boolean   @default(true)
+//   createdAt      DateTime  @default(now())
+//   updatedAt      DateTime  @updatedAt
+  
+//   // Relations
+//   sales          Sales[]
+//    collections          Collection[]
+
+  
+//   @@index([psrCode])
+//   @@index([status])
+//   @@index([createdById])
+//   @@index([updatedById])
+//   @@map("psrs")
+// }
+
+
+
+// ==========================================
+// ENUMS
+// ==========================================
+enum PurchaseStatus {
+  ACTIVE
+  EXPIRED
+  DAMAGED
+  RETURNED 
+  
+  @@map("purchase_status")
+}
+enum InventoryStatus {
+  ACTIVE
+  EXPIRED
+  DAMAGED
+  RECALLED
+  SOLD_OUT
+  
+  @@map("inventory_status")
+}
+enum MovementType {
+  INBOUND      // Stock received
+  OUTBOUND     // Stock sold/dispensed
+  ADJUSTMENT   // Stock adjustment (audit, damage, etc.)
+  TRANSFER     // Transfer between locations
+  RETURN       // Return from customer
+  EXPIRED      // Marked as expired
+  
+  @@map("movement_type")
+}
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+  LOGIN
+  LOGOUT
+  EXPORT
+}
+//Purchase Edit enums
+enum PurchaseEditType {
+  PURCHASE       // Edit made to Purchase table
+  PURCHASE_ITEM  // Edit made to PurchaseItems table
+  
+  @@map("purchase_edit_type")
+}
+enum EditAction {
+  INSERT    // New record created
+  UPDATE    // Existing record modified
+  DELETE    // Record deleted/soft deleted
+  RESTORE   // Deleted record restored
+  
+  @@map("edit_action")
+}
+enum PurchaseReturnStatus {
+  PENDING      // Return request submitted, awaiting approval
+  APPROVED     // Return approved
+  PROCESSED    // Return completed and refund issued
+  REJECTED     // Return request rejected
+  CANCELLED    // Return request cancelled
+  
+  @@map("purchase_return_status")
+}
+
+enum ProductTransactionType {
+  PURCHASE_RECEIVED
+  INVENTORY_ADJUSTMENT
+  SALE
+  RETURN_TO_SUPPLIER
+  SALES_RETURN
+  PRICE_UPDATE_PRODUCT
+  PRICE_UPDATE_INVENTORY //Inventory Price Update and Product Price Update
+  INVENTORY_TRANSFER
+  MANUAL_EDIT
+  PURCHASE_EDIT
+  INVENTORY_ADDED
+  EXPIRED
+  LOW_STOCK
+}
+
+
+//SALES ENUMS
+enum SalesStatus {
+  ACTIVE
+  CANCELLED
+  RETURNED
+  PARTIALLY_RETURNED
+  VOID
+  
+  @@map("sales_status")
+}
+
+enum SalesItemStatus {
+  ACTIVE
+  CANCELLED
+  RETURNED
+  PARTIALLY_RETURNED
+  
+  @@map("sales_item_status")
+}
+
+enum CustomerType {
+  WALK_IN
+  REGULAR
+  WHOLESALE
+  GOVERNMENT
+  HOSPITAL
+  CLINIC
+  PHARMACY
+  
+  @@map("customer_type")
+}
+
+enum PaymentTerms {
+  CASH
+  CREDIT_30
+  CREDIT_60
+  CREDIT_90
+  
+  @@map("payment_terms")
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  BANK_TRANSFER
+  CREDIT_CARD
+  DEBIT_CARD
+  GCASH
+  PAYMAYA
+  
+  @@map("payment_method")
+}
+
+enum PaymentStatus {
+  PENDING
+  CLEARED
+  BOUNCED
+  CANCELLED
+  
+  @@map("payment_status")
+}
+
+enum SalesReturnStatus {
+  PENDING
+  APPROVED
+  PROCESSED
+  REJECTED
+  CANCELLED
+  
+  @@map("sales_return_status")
+}
+
+enum PSRStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  ON_LEAVE
+  
+  @@map("psr_status")
+}
+
+enum CollectionStatus {
+  PENDING
+  COLLECTED
+  DEPOSITED
+  RECONCILED
+  CANCELLED
+  
+  @@map("collection_status")
+}

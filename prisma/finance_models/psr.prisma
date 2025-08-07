@@ -1,0 +1,35 @@
+model PSR {
+  id             Int       @id @default(autoincrement())
+  
+  // PSR Information
+  psrCode        String    @unique
+  fullName       String
+  areaCode String?
+
+  sourceHash   String?
+  
+  // Employment Information
+  status         PSRStatus @default(ACTIVE) 
+  
+  // User Accountability
+  createdBy      User      @relation("PSRCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById    Int
+  updatedBy      User?     @relation("PSRUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedById    Int?
+  
+  // Status and Audit
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations
+  sales          Sales[]
+   collections          Collection[]
+
+  
+  @@index([psrCode])
+  @@index([status])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("psrs")
+}

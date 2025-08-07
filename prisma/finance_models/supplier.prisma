@@ -1,0 +1,13 @@
+model Supplier {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  tin_id     String?     // Optional TIN ID
+  contact    String?     // Optional contact information
+  address    String?     // Optional address
+  isActive     Boolean   @default(true)
+  inventoryBatches InventoryBatch[]
+  Purchase Purchase[]
+    
+  @@map("suppliers")
+ 
+}

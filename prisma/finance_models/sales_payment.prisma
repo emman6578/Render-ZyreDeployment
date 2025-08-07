@@ -1,0 +1,36 @@
+model SalesPayment {
+  id             Int       @id @default(autoincrement())
+  
+  // Reference to sale
+  sale           Sales     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId         Int
+  
+  // Payment Information
+  paymentMethod  PaymentMethod
+  paymentAmount  Decimal   @db.Decimal(10, 2)
+  paymentDate    DateTime  @default(now())
+  
+  // Payment Details
+  referenceNumber String?  // Check number, bank reference, etc.
+  bankName       String?
+  checkDate      DateTime?
+  
+  // User Accountability
+  receivedBy     User      @relation("PaymentReceivedBy", fields: [receivedById], references: [id], onDelete: Restrict)
+  receivedById   Int
+  
+  // Status and Audit
+  status         PaymentStatus @default(PENDING)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Optional fields
+  notes          String?
+  
+  @@index([saleId])
+  @@index([paymentMethod])
+  @@index([paymentDate])
+  @@index([status])
+  @@index([receivedById])
+  @@map("sales_payments")
+}

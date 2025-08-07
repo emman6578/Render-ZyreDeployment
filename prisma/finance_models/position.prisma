@@ -1,0 +1,13 @@
+model Position {
+  id            Int               @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+
+    isActive     Boolean   @default(true)
+
+  
+  // Position can be assigned to multiple users
+  users       User[]
+}
