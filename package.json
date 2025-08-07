@@ -4,13 +4,13 @@
   "description": "",
   "main": "src/server.ts",
   "_moduleAliases": {
-    "@controllers": "src/controllers",
-    "@config": "src/config",
-    "@middlewares": "src/middlewares",
-    "@models": "src/models",
-    "@routes": "src/routes",
-    "@services": "src/services",
-    "@utils": "src/utils"
+    "@controllers": "dist/controllers",
+    "@config": "dist/config",
+    "@middlewares": "dist/middlewares",
+    "@models": "dist/models",
+    "@routes": "dist/routes",
+    "@services": "dist/services",
+    "@utils": "dist/utils"
   },
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec \"ts-node -r module-alias/register src/server.ts\"",
