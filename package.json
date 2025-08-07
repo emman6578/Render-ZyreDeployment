@@ -5,21 +5,29 @@
   "main": "src/server.ts",
   "_moduleAliases": {
     "@controllers": "dist/controllers",
+    "@controllers/*": "dist/controllers/*",
     "@config": "dist/config",
+    "@config/*": "dist/config/*",
     "@middlewares": "dist/middlewares",
+    "@middlewares/*": "dist/middlewares/*",
     "@models": "dist/models",
+    "@models/*": "dist/models/*",
     "@routes": "dist/routes",
+    "@routes/*": "dist/routes/*",
     "@services": "dist/services",
-    "@utils": "dist/utils"
+    "@services/*": "dist/services/*",
+    "@utils": "dist/utils",
+    "@utils/*": "dist/utils/*"
   },
   "scripts": {
-    "dev": "nodemon --watch src --ext ts --exec \"ts-node -r module-alias/register src/server.ts\"",
+    "dev": "nodemon --watch src --ext ts --exec \"ts-node -r tsconfig-paths/register src/server.ts\"",
     "build": "tsc",
     "start": "node -r module-alias/register dist/server.js",
     "ngrok": "ngrok http 3001",
     "db:seed": "npx ts-node seed.ts"
   },
   "prisma": {
+    "seed": "npm run db:seed",
     "schema": "./prisma"
   },
   "keywords": [],
@@ -31,7 +39,6 @@
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "csrf": "^3.1.0",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "exceljs": "^4.4.0",
