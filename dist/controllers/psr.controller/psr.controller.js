@@ -53,23 +53,35 @@ exports.read_PSR_from_HRMS = (0, express_async_handler_1.default)((req, res) => 
 }));
 // READ PSR
 exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { search } = req.query;
-    const whereClause = search
-        ? {
+    const { search, areaCode } = req.query;
+    let whereClause = {};
+    if (search) {
+        whereClause = {
             OR: [
                 { fullName: { contains: search } },
-                { areaCode: { contains: search.toLowerCase() } },
+                { areaCode: { contains: search } },
                 { psrCode: { contains: search } },
             ],
+        };
+    }
+    if (areaCode) {
+        // If whereClause is already an OR, wrap with AND
+        if (whereClause.OR) {
+            whereClause = {
+                AND: [whereClause, { areaCode: { equals: areaCode } }],
+            };
         }
-        : {};
+        else {
+            whereClause.areaCode = { equals: areaCode };
+        }
+    }
     const response = yield prisma.pSR.findMany({
         where: whereClause,
         orderBy: {
             fullName: "asc",
         },
     });
-    (0, SuccessHandler_1.successHandler)(response, res, "GET", `Getting ${search ? "filtered" : "all"} PSR values`);
+    (0, SuccessHandler_1.successHandler)(response, res, "GET", `Getting ${search || areaCode ? "filtered" : "all"} PSR values`);
 }));
 exports.syncAndReadPSR = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // 1. Fetch from legacy HRMS

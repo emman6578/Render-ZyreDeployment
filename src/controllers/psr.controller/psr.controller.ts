@@ -46,17 +46,30 @@ export const read_PSR_from_HRMS = expressAsyncHandler(
 
 // READ PSR
 export const read = expressAsyncHandler(async (req: Request, res: Response) => {
-  const { search } = req.query;
+  const { search, areaCode } = req.query;
 
-  const whereClause = search
-    ? {
-        OR: [
-          { fullName: { contains: search as string } },
-          { areaCode: { contains: (search as string).toLowerCase() } },
-          { psrCode: { contains: search as string } },
-        ],
-      }
-    : {};
+  let whereClause: any = {};
+
+  if (search) {
+    whereClause = {
+      OR: [
+        { fullName: { contains: search as string } },
+        { areaCode: { contains: search as string } },
+        { psrCode: { contains: search as string } },
+      ],
+    };
+  }
+
+  if (areaCode) {
+    // If whereClause is already an OR, wrap with AND
+    if (whereClause.OR) {
+      whereClause = {
+        AND: [whereClause, { areaCode: { equals: areaCode } }],
+      };
+    } else {
+      whereClause.areaCode = { equals: areaCode };
+    }
+  }
 
   const response = await prisma.pSR.findMany({
     where: whereClause,
@@ -69,7 +82,7 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
     response,
     res,
     "GET",
-    `Getting ${search ? "filtered" : "all"} PSR values`
+    `Getting ${search || areaCode ? "filtered" : "all"} PSR values`
   );
 });
 
