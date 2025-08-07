@@ -27,7 +27,6 @@
     "db:seed": "npx ts-node seed.ts"
   },
   "prisma": {
-    "seed": "npm run db:seed",
     "schema": "./prisma"
   },
   "keywords": [],
