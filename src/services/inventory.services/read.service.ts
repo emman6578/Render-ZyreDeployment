@@ -174,8 +174,7 @@ export const inventory_list = async (
     hasPreviousPage: page > 1,
   };
 
-  // Step 5: Build summary object based on the paginated list
-
+  // Step 5: Calculate summary for all ACTIVE records, regardless of current filter
   let totalCurrentQuantity = 0;
   let totalCostValue = 0;
   let totalRetailValue = 0;
@@ -184,14 +183,21 @@ export const inventory_list = async (
   let totalOriginalCostValue = 0;
   let totalOriginalRetailValue = 0;
 
-  for (const inv of paginated) {
+  // Fetch all ACTIVE inventory batches for summary
+  const allActiveInventories = await prisma.inventoryBatch.findMany({
+    where: { status: "ACTIVE", isActive: true },
+    include: {
+      items: true,
+    },
+  });
+
+  for (const inv of allActiveInventories) {
     inv.items.forEach((it) => {
       const initQty = it.initialQuantity ?? 0;
       const currQty = it.currentQuantity ?? 0;
       const costP = it.costPrice ?? 0;
       const retailP = it.retailPrice ?? 0;
       const consumed = initQty - currQty;
-      const markupUnit = Number(retailP) - Number(costP);
 
       // Raw totals
       totalCurrentQuantity += currQty;

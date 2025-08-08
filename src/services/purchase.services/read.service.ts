@@ -200,7 +200,7 @@ export const purchase_list = async (
     hasPreviousPage: page > 1,
   };
 
-  // Step 5: Calculate summary
+  // Step 5: Calculate summary for all ACTIVE records, regardless of current filter
   let totalInitialQuantity = 0;
   let totalCurrentQuantity = 0;
   let totalCostValue = 0;
@@ -208,7 +208,15 @@ export const purchase_list = async (
   let totalOrigCostValue = 0;
   let totalOrigRetailValue = 0;
 
-  for (const inv of paginated) {
+  // Fetch all ACTIVE records for summary
+  const allActiveInventories = await prisma.purchase.findMany({
+    where: { status: "ACTIVE" },
+    include: {
+      items: true,
+    },
+  });
+
+  for (const inv of allActiveInventories) {
     inv.items.forEach((it) => {
       const initQty = it.initialQuantity ?? 0;
       const currQty = it.currentQuantity ?? 0;

@@ -2,7 +2,6 @@ import { AuthRequest } from "@middlewares/authMiddleware";
 import { successHandler } from "@utils/SuccessHandler/SuccessHandler";
 import { Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
-
 import {
   create_products_bulk,
   CreateProductData,
