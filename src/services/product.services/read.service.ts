@@ -34,42 +34,7 @@ export const products = async (filters: ProductFilters) => {
     isActive: true,
   };
 
-  // Search functionality
-  if (search) {
-    // Create case variations for better search coverage
-    const searchVariations = [
-      search,
-      search.toLowerCase(),
-      search.toUpperCase(),
-      search.charAt(0).toUpperCase() + search.slice(1).toLowerCase(), // Title case
-    ];
-
-    const searchConditions: any[] = [];
-
-    // Add contains conditions for each variation
-    searchVariations.forEach((variation) => {
-      searchConditions.push(
-        { generic: { name: { contains: variation } } },
-        { brand: { name: { contains: variation } } },
-        {
-          categories: {
-            some: {
-              name: { contains: variation },
-            },
-          },
-        },
-        { company: { name: { contains: variation } } }
-      );
-    });
-
-    // Only add the ID search condition if the search term is a valid number.
-    if (!isNaN(Number(search))) {
-      searchConditions.push({ id: Number(search) } as any);
-    }
-
-    where.OR = searchConditions;
-  }
-
+  // Apply basic filters (excluding search)
   if (categoryId) {
     if (Array.isArray(categoryId)) {
       where.categories = {
@@ -97,53 +62,102 @@ export const products = async (filters: ProductFilters) => {
     "averageCostPrice",
     "averageRetailPrice",
     "safetyStock",
-    "brandName", // Added brandName
+    "brandName",
   ];
   const sortField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
 
   let orderBy: any;
   if (sortField === "brandName") {
-    // For brand name sorting, we need to sort by the related brand's name
     orderBy = {
       brand: {
         name: sortOrder,
       },
     };
   } else {
-    // For other fields, use direct sorting
     orderBy = { [sortField]: sortOrder };
   }
 
-  const [products, totalCount, allProducts, inventoryData] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      skip,
-      take,
-      orderBy,
-      include: {
-        generic: true,
-        brand: true,
-        categories: true,
-        company: true,
-        createdBy: { select: { id: true, fullname: true, email: true } },
-        updatedBy: { select: { id: true, fullname: true, email: true } },
-        _count: { select: { inventoryItems: true } },
-      },
-    }),
+  // Step 1: Fetch all products with basic filters (excluding search)
+  const allProducts = await prisma.product.findMany({
+    where,
+    include: {
+      generic: true,
+      brand: true,
+      categories: true,
+      company: true,
+      createdBy: { select: { id: true, fullname: true, email: true } },
+      updatedBy: { select: { id: true, fullname: true, email: true } },
+      _count: { select: { inventoryItems: true } },
+    },
+  });
 
+  // Step 2: Apply search filter (post-query filtering like inventory service)
+  let searched = allProducts;
+  if (search) {
+    const s = search.toLowerCase();
+    searched = allProducts.filter((product) => {
+      return (
+        product.id.toString().includes(s) ||
+        product.generic?.name?.toLowerCase().includes(s) ||
+        product.brand?.name?.toLowerCase().includes(s) ||
+        product.company?.name?.toLowerCase().includes(s) ||
+        product.categories?.some((category) =>
+          category.name?.toLowerCase().includes(s)
+        ) ||
+        product.averageCostPrice?.toString().includes(s) ||
+        product.averageRetailPrice?.toString().includes(s) ||
+        product.safetyStock?.toString().includes(s)
+      );
+    });
+  }
+
+  // Step 3: Apply sorting
+  if (sortField && validSortFields.includes(sortField)) {
+    searched.sort((a, b) => {
+      if (sortField === "brandName") {
+        const aName = a.brand?.name || "";
+        const bName = b.brand?.name || "";
+        return sortOrder === "asc"
+          ? aName.localeCompare(bName)
+          : bName.localeCompare(aName);
+      } else {
+        const aValue = a[sortField as keyof typeof a];
+        const bValue = b[sortField as keyof typeof b];
+
+        if (aValue === null || bValue === null) return 0;
+
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+        }
+
+        if (aValue instanceof Date && bValue instanceof Date) {
+          return sortOrder === "asc"
+            ? aValue.getTime() - bValue.getTime()
+            : bValue.getTime() - aValue.getTime();
+        }
+
+        return 0;
+      }
+    });
+  }
+
+  // Step 4: Paginate
+  const totalItems = searched.length;
+  const totalPages = Math.ceil(totalItems / take);
+  const paginated = searched.slice(skip, skip + take);
+
+  const pagination = {
+    currentPage: page,
+    totalPages,
+    totalItems,
+    itemsPerPage: take,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1,
+  };
+
+  // Step 5: Get additional data for summary calculations
+  const [totalCount, inventoryData] = await Promise.all([
     prisma.product.count({ where }),
-
-    prisma.product.findMany({
-      where,
-      include: {
-        generic: { select: { name: true } },
-        brand: { select: { name: true } },
-        categories: { select: { id: true, name: true } },
-        company: { select: { id: true, name: true } },
-        _count: { select: { inventoryItems: true } },
-      },
-    }),
-
     prisma.inventoryItem.findMany({
       where: {
         product: where,
@@ -170,20 +184,11 @@ export const products = async (filters: ProductFilters) => {
     }),
   ]);
 
-  const pagination = {
-    currentPage: page,
-    totalPages: Math.ceil(totalCount / take),
-    totalItems: totalCount,
-    itemsPerPage: take,
-    hasNextPage: skip + take < totalCount,
-    hasPreviousPage: page > 1,
-  };
-
   const summary = {
     // ... all the summary calculations remain the same
     statusBreakdown: {
-      activeProducts: allProducts.filter((p) => p.isActive).length,
-      inactiveProducts: allProducts.filter((p) => !p.isActive).length,
+      activeProducts: searched.filter((p) => p.isActive).length,
+      inactiveProducts: searched.filter((p) => !p.isActive).length,
     },
     pricing: {
       totalCostValue: inventoryData.reduce(
@@ -240,9 +245,7 @@ export const products = async (filters: ProductFilters) => {
 
         return Object.entries(productStocks).filter(
           ([productId, totalStock]) => {
-            const product = allProducts.find(
-              (p) => p.id === parseInt(productId)
-            );
+            const product = searched.find((p) => p.id === parseInt(productId));
             const safetyStock = product?.safetyStock ?? 10;
             return totalStock < safetyStock;
           }
@@ -262,7 +265,7 @@ export const products = async (filters: ProductFilters) => {
         inventoryData.map((item) => item.productId)
       ).size,
     },
-    categoryDistribution: allProducts.reduce((acc, p) => {
+    categoryDistribution: searched.reduce((acc, p) => {
       if (p.categories && p.categories.length > 0) {
         p.categories.forEach((category) => {
           const name = category.name ?? "Uncategorized";
@@ -273,7 +276,7 @@ export const products = async (filters: ProductFilters) => {
       }
       return acc;
     }, {} as Record<string, number>),
-    companyOptions: allProducts
+    companyOptions: searched
       .reduce((acc, p) => {
         if (p.company) {
           const existing = acc.find((item) => item.id === p.company!.id);
@@ -290,7 +293,7 @@ export const products = async (filters: ProductFilters) => {
         return acc;
       }, [] as Array<{ id: number; name: string; count: number }>)
       .sort((a, b) => a.name.localeCompare(b.name)),
-    categoryOptions: allProducts
+    categoryOptions: searched
       .reduce((acc, p) => {
         if (p.categories && p.categories.length > 0) {
           p.categories.forEach((category) => {
@@ -310,35 +313,35 @@ export const products = async (filters: ProductFilters) => {
       }, [] as Array<{ id: number; name: string; count: number }>)
       .sort((a, b) => a.name.localeCompare(b.name)),
     timeAnalysis: {
-      productsCreatedToday: allProducts.filter((p) => {
+      productsCreatedToday: searched.filter((p) => {
         const today = new Date().toDateString();
         return new Date(p.createdAt).toDateString() === today;
       }).length,
-      productsUpdatedToday: allProducts.filter((p) => {
+      productsUpdatedToday: searched.filter((p) => {
         const today = new Date().toDateString();
         return new Date(p.updatedAt).toDateString() === today;
       }).length,
       newestProduct:
-        allProducts.length > 0
-          ? allProducts.reduce((newest, p) =>
+        searched.length > 0
+          ? searched.reduce((newest, p) =>
               new Date(p.createdAt) > new Date(newest.createdAt) ? p : newest
             ).createdAt
           : null,
       lastUpdated:
-        allProducts.length > 0
-          ? allProducts.reduce((latest, p) =>
+        searched.length > 0
+          ? searched.reduce((latest, p) =>
               new Date(p.updatedAt) > new Date(latest.updatedAt) ? p : latest
             ).updatedAt
           : null,
     },
     dataQuality: {
-      productsWithoutGeneric: allProducts.filter((p) => !p.generic).length,
-      productsWithoutBrand: allProducts.filter((p) => !p.brand).length,
-      productsWithoutCategory: allProducts.filter(
+      productsWithoutGeneric: searched.filter((p) => !p.generic).length,
+      productsWithoutBrand: searched.filter((p) => !p.brand).length,
+      productsWithoutCategory: searched.filter(
         (p) => !p.categories || p.categories.length === 0
       ).length,
-      productsWithoutCompany: allProducts.filter((p) => !p.company).length,
-      productsWithoutPricing: allProducts.filter(
+      productsWithoutCompany: searched.filter((p) => !p.company).length,
+      productsWithoutPricing: searched.filter(
         (p) => !p.averageCostPrice || !p.averageRetailPrice
       ).length,
     },
@@ -356,7 +359,7 @@ export const products = async (filters: ProductFilters) => {
       sortedBy: `${sortField} (${sortOrder})`,
     },
     summaryInfo: {
-      basedOnFilteredProducts: allProducts.length,
+      basedOnFilteredProducts: searched.length,
       totalProductsInSystem: totalCount,
       filtersApplied: [
         search,
@@ -369,5 +372,5 @@ export const products = async (filters: ProductFilters) => {
     },
   };
 
-  return { products, pagination, summary };
+  return { products: paginated, pagination, summary };
 };
