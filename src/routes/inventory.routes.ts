@@ -3,7 +3,7 @@ import {
   expiredProducts,
   getAllProductsWithInventory,
   inventoryMovementGroupedByBatch,
-  inventoryMovementREAD,
+  inventoryMovementWithRunningBalance,
   lowStockProducts,
   read,
   read_Inventory_Items,
@@ -99,10 +99,10 @@ router.get(
 
 //Inventory Movement Routes========================================================================================================================
 router.get(
-  "/inventory-movement",
+  "/inventory-movement-with-running-balance",
   authenticateToken,
   authorizeRoles(["SUPERADMIN", "ADMIN"]),
-  inventoryMovementREAD
+  inventoryMovementWithRunningBalance
 );
 router.get(
   "/inventory-movement-grouped-by-batch",

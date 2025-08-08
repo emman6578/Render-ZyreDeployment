@@ -1,6 +1,6 @@
 import { AuthRequest } from "@middlewares/authMiddleware";
 import { ActionType, Prisma, PrismaClient } from "@prisma/client";
-import { inventory_movement_list } from "@services/inventory.movement.services/read.service";
+import { inventory_movement_with_running_balance } from "@services/inventory.movement.services/read.service";
 import { inventory_create } from "@services/inventory.services/create.service";
 import { expired_products_list } from "@services/inventory.services/expired-products.service";
 import { low_stock_products_list } from "@services/inventory.services/low-stock.service";
@@ -297,50 +297,6 @@ export const lowStockProducts = expressAsyncHandler(
   }
 );
 //===================================================================================================================================================================================================
-//INVENTORY MOVEMENT CONTROLLER
-export const inventoryMovementREAD = expressAsyncHandler(
-  async (req: Request, res: Response) => {
-    try {
-      // Extract and parse query parameters
-      const {
-        search = "",
-        sortField = "createdAt",
-        sortOrder = "desc",
-        page = "1",
-        limit = "10",
-        movementType,
-        dateFrom,
-        dateTo,
-      } = req.query as InventoryMovementQuery;
-
-      // Parse pagination parameters
-      const currentPage = Math.max(1, parseInt(page));
-      const itemsPerPage = Math.max(1, Math.min(100, parseInt(limit))); // Max 100 items per page
-
-      // Call service function
-      const responseData = await inventory_movement_list(
-        currentPage,
-        itemsPerPage,
-        search,
-        sortField,
-        sortOrder as "asc" | "desc",
-        movementType,
-        dateFrom,
-        dateTo
-      );
-
-      // Send successful response
-      successHandler(
-        responseData,
-        res,
-        "GET",
-        "READ Inventory Movement successfully"
-      );
-    } catch (error: any) {
-      throw new Error(error.message || error);
-    }
-  }
-);
 export const inventoryMovementGroupedByBatch = expressAsyncHandler(
   async (req: Request, res: Response) => {
     try {
@@ -377,7 +333,6 @@ export const inventoryMovementGroupedByBatch = expressAsyncHandler(
     }
   }
 );
-
 export const inventoryMovementCREATE = expressAsyncHandler(
   async (req: Request, res: Response) => {
     successHandler(
@@ -398,6 +353,54 @@ export const inventoryMovementUPDATE = expressAsyncHandler(
     );
   }
 );
+
+// INVENTORY MOVEMENT WITH RUNNING BALANCE CONTROLLER
+export const inventoryMovementWithRunningBalance = expressAsyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      // Extract and parse query parameters
+      const {
+        inventoryItemId,
+        dateFrom,
+        dateTo,
+        page = "1",
+        limit = "10",
+      } = req.query;
+
+      // Parse pagination parameters
+      const currentPage = Math.max(1, parseInt(page as string));
+      const itemsPerPage = Math.max(
+        1,
+        Math.min(100, parseInt(limit as string))
+      ); // Max 100 items per page
+
+      // Parse inventoryItemId if provided
+      const parsedInventoryItemId = inventoryItemId
+        ? parseInt(inventoryItemId as string)
+        : undefined;
+
+      // Call service function
+      const responseData = await inventory_movement_with_running_balance(
+        parsedInventoryItemId,
+        dateFrom as string,
+        dateTo as string,
+        currentPage,
+        itemsPerPage
+      );
+
+      // Send successful response
+      successHandler(
+        responseData,
+        res,
+        "GET",
+        "READ Inventory Movement with Running Balance successfully"
+      );
+    } catch (error: any) {
+      throw new Error(error.message || error);
+    }
+  }
+);
+
 //INVENTORY ITEMS FETCH FUNCTION
 export const read_Inventory_Items = expressAsyncHandler(
   async (req: Request, res: Response) => {
@@ -470,16 +473,6 @@ export const read_Inventory_Items = expressAsyncHandler(
     );
   }
 );
-// export const inventoryMovementDELETE = expressAsyncHandler(
-//   async (req: Request, res: Response) => {
-//     successHandler(
-//       "DELETE",
-//       res,
-//       "GET",
-//       "DELETE Inventory Movement successfully"
-//     );
-//   }
-// );
 
 //==========================================For Zyre MS Controller===========================================================================================
 export const salesInventoryProducts = expressAsyncHandler(

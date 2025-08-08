@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllProductsWithInventory = exports.downloadAndDeleteInventoryReport = exports.getInventoryReportFiles = exports.inventory_report = exports.salesInventoryProducts = exports.read_Inventory_Items = exports.inventoryMovementUPDATE = exports.inventoryMovementCREATE = exports.inventoryMovementGroupedByBatch = exports.inventoryMovementREAD = exports.lowStockProducts = exports.expiredProducts = exports.restore = exports.remove = exports.update = exports.readInventoryToUpdate = exports.readById = exports.read = exports.create = void 0;
+exports.getAllProductsWithInventory = exports.downloadAndDeleteInventoryReport = exports.getInventoryReportFiles = exports.inventory_report = exports.salesInventoryProducts = exports.read_Inventory_Items = exports.inventoryMovementWithRunningBalance = exports.inventoryMovementUPDATE = exports.inventoryMovementCREATE = exports.inventoryMovementGroupedByBatch = exports.lowStockProducts = exports.expiredProducts = exports.restore = exports.remove = exports.update = exports.readInventoryToUpdate = exports.readById = exports.read = exports.create = void 0;
 const client_1 = require("@prisma/client");
 const read_service_1 = require("@services/inventory.movement.services/read.service");
 const create_service_1 = require("@services/inventory.services/create.service");
@@ -176,23 +176,6 @@ exports.lowStockProducts = (0, express_async_handler_1.default)((req, res) => __
     }
 }));
 //===================================================================================================================================================================================================
-//INVENTORY MOVEMENT CONTROLLER
-exports.inventoryMovementREAD = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        // Extract and parse query parameters
-        const { search = "", sortField = "createdAt", sortOrder = "desc", page = "1", limit = "10", movementType, dateFrom, dateTo, } = req.query;
-        // Parse pagination parameters
-        const currentPage = Math.max(1, parseInt(page));
-        const itemsPerPage = Math.max(1, Math.min(100, parseInt(limit))); // Max 100 items per page
-        // Call service function
-        const responseData = yield (0, read_service_1.inventory_movement_list)(currentPage, itemsPerPage, search, sortField, sortOrder, movementType, dateFrom, dateTo);
-        // Send successful response
-        (0, SuccessHandler_1.successHandler)(responseData, res, "GET", "READ Inventory Movement successfully");
-    }
-    catch (error) {
-        throw new Error(error.message || error);
-    }
-}));
 exports.inventoryMovementGroupedByBatch = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { batchNumber, referenceNumber, batchAndReference, page, limit, dateFrom, dateTo, movementType, } = req.query;
@@ -217,6 +200,27 @@ exports.inventoryMovementCREATE = (0, express_async_handler_1.default)((req, res
 }));
 exports.inventoryMovementUPDATE = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     (0, SuccessHandler_1.successHandler)("UPDATE", res, "GET", "UPDATE Inventory Movement successfully");
+}));
+// INVENTORY MOVEMENT WITH RUNNING BALANCE CONTROLLER
+exports.inventoryMovementWithRunningBalance = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Extract and parse query parameters
+        const { inventoryItemId, dateFrom, dateTo, page = "1", limit = "10", } = req.query;
+        // Parse pagination parameters
+        const currentPage = Math.max(1, parseInt(page));
+        const itemsPerPage = Math.max(1, Math.min(100, parseInt(limit))); // Max 100 items per page
+        // Parse inventoryItemId if provided
+        const parsedInventoryItemId = inventoryItemId
+            ? parseInt(inventoryItemId)
+            : undefined;
+        // Call service function
+        const responseData = yield (0, read_service_1.inventory_movement_with_running_balance)(parsedInventoryItemId, dateFrom, dateTo, currentPage, itemsPerPage);
+        // Send successful response
+        (0, SuccessHandler_1.successHandler)(responseData, res, "GET", "READ Inventory Movement with Running Balance successfully");
+    }
+    catch (error) {
+        throw new Error(error.message || error);
+    }
 }));
 //INVENTORY ITEMS FETCH FUNCTION
 exports.read_Inventory_Items = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -276,16 +280,6 @@ exports.read_Inventory_Items = (0, express_async_handler_1.default)((req, res) =
     });
     (0, SuccessHandler_1.successHandler)(items, res, "GET", "Reading all the items from the inventory");
 }));
-// export const inventoryMovementDELETE = expressAsyncHandler(
-//   async (req: Request, res: Response) => {
-//     successHandler(
-//       "DELETE",
-//       res,
-//       "GET",
-//       "DELETE Inventory Movement successfully"
-//     );
-//   }
-// );
 //==========================================For Zyre MS Controller===========================================================================================
 exports.salesInventoryProducts = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const salesInventory = yield prisma.inventoryBatch.findMany({
