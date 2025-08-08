@@ -40,27 +40,33 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
   const itemsPerPage = parseInt(limit as string, 10) || 1000;
   const skip = (pageNumber - 1) * itemsPerPage;
 
-  const whereClause: any = {
+  const whereClause = {
     isActive: true,
   };
 
+  // Step 1: Fetch all districts with basic filters (excluding search)
+  const allDistricts = await prisma.district.findMany({
+    where: whereClause,
+    orderBy: { name: "asc" },
+  });
+
+  // Step 2: Apply search filter (post-query filtering like product service)
+  let searched = allDistricts;
   if (search) {
-    whereClause.name = {
-      contains: search as string,
-    };
+    const s = search.toString().toLowerCase();
+    searched = allDistricts.filter((district) => {
+      return (
+        district.id.toString().includes(s) ||
+        district.name?.toLowerCase().includes(s) ||
+        district.code?.toLowerCase().includes(s)
+      );
+    });
   }
 
-  const [totalItems, districts] = await Promise.all([
-    prisma.district.count({ where: whereClause }),
-    prisma.district.findMany({
-      where: whereClause,
-      orderBy: { name: "asc" },
-      skip,
-      take: itemsPerPage,
-    }),
-  ]);
-
+  // Step 3: Paginate
+  const totalItems = searched.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const paginated = searched.slice(skip, skip + itemsPerPage);
 
   const pagination = {
     currentPage: pageNumber,
@@ -72,7 +78,7 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
   };
 
   successHandler(
-    { districts, pagination },
+    { districts: paginated, pagination },
     res,
     "GET",
     `Getting ${search ? "filtered" : "all"} Districts values`

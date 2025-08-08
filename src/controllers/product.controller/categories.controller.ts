@@ -42,27 +42,32 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
 
   const whereClause = {
     isActive: true,
-    ...(search
-      ? {
-          name: {
-            contains: search as string,
-          },
-        }
-      : {}),
   };
 
-  // Get total count for pagination
-  const totalItems = await prisma.category.count({ where: whereClause });
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-
-  const response = await prisma.category.findMany({
+  // Step 1: Fetch all categories with basic filters (excluding search)
+  const allCategories = await prisma.category.findMany({
     where: whereClause,
     orderBy: {
       name: "asc",
     },
-    skip,
-    take: itemsPerPage,
   });
+
+  // Step 2: Apply search filter (post-query filtering like product service)
+  let searched = allCategories;
+  if (search) {
+    const s = search.toString().toLowerCase();
+    searched = allCategories.filter((category) => {
+      return (
+        category.id.toString().includes(s) ||
+        category.name?.toLowerCase().includes(s)
+      );
+    });
+  }
+
+  // Step 3: Paginate
+  const totalItems = searched.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const paginated = searched.slice(skip, skip + itemsPerPage);
 
   const pagination = {
     currentPage,
@@ -74,7 +79,7 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
   };
 
   successHandler(
-    { items: response, pagination },
+    { items: paginated, pagination },
     res,
     "GET",
     `Getting ${search ? "filtered" : "all"} Category values`

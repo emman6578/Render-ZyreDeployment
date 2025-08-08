@@ -37,23 +37,33 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
   const itemsPerPage = parseInt(limit as string, 10) || 1000;
   const skip = (pageNumber - 1) * itemsPerPage;
 
-  const whereClause: any = { isActive: true };
-  if (search) {
-    whereClause.name = { contains: search as string };
-  }
+  const whereClause = {
+    isActive: true,
+  };
 
-  // Get total count for pagination
-  const totalItems = await prisma.brand.count({ where: whereClause });
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-
-  const response = await prisma.brand.findMany({
+  // Step 1: Fetch all brands with basic filters (excluding search)
+  const allBrands = await prisma.brand.findMany({
     where: whereClause,
     orderBy: {
       name: "asc",
     },
-    skip,
-    take: itemsPerPage,
   });
+
+  // Step 2: Apply search filter (post-query filtering like product service)
+  let searched = allBrands;
+  if (search) {
+    const s = search.toString().toLowerCase();
+    searched = allBrands.filter((brand) => {
+      return (
+        brand.id.toString().includes(s) || brand.name?.toLowerCase().includes(s)
+      );
+    });
+  }
+
+  // Step 3: Paginate
+  const totalItems = searched.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const paginated = searched.slice(skip, skip + itemsPerPage);
 
   const pagination = {
     currentPage: pageNumber,
@@ -65,7 +75,7 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
   };
 
   successHandler(
-    { brands: response, pagination },
+    { brands: paginated, pagination },
     res,
     "GET",
     `Getting ${search ? "filtered" : "all"} Brands values`

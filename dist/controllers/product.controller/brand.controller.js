@@ -43,21 +43,29 @@ exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void
     const pageNumber = parseInt(page, 10) || 1;
     const itemsPerPage = parseInt(limit, 10) || 1000;
     const skip = (pageNumber - 1) * itemsPerPage;
-    const whereClause = { isActive: true };
-    if (search) {
-        whereClause.name = { contains: search };
-    }
-    // Get total count for pagination
-    const totalItems = yield prisma.brand.count({ where: whereClause });
-    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-    const response = yield prisma.brand.findMany({
+    const whereClause = {
+        isActive: true,
+    };
+    // Step 1: Fetch all brands with basic filters (excluding search)
+    const allBrands = yield prisma.brand.findMany({
         where: whereClause,
         orderBy: {
             name: "asc",
         },
-        skip,
-        take: itemsPerPage,
     });
+    // Step 2: Apply search filter (post-query filtering like product service)
+    let searched = allBrands;
+    if (search) {
+        const s = search.toString().toLowerCase();
+        searched = allBrands.filter((brand) => {
+            var _a;
+            return (brand.id.toString().includes(s) || ((_a = brand.name) === null || _a === void 0 ? void 0 : _a.toLowerCase().includes(s)));
+        });
+    }
+    // Step 3: Paginate
+    const totalItems = searched.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const paginated = searched.slice(skip, skip + itemsPerPage);
     const pagination = {
         currentPage: pageNumber,
         totalPages,
@@ -66,7 +74,7 @@ exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void
         hasNextPage: pageNumber < totalPages,
         hasPreviousPage: pageNumber > 1,
     };
-    (0, SuccessHandler_1.successHandler)({ brands: response, pagination }, res, "GET", `Getting ${search ? "filtered" : "all"} Brands values`);
+    (0, SuccessHandler_1.successHandler)({ brands: paginated, pagination }, res, "GET", `Getting ${search ? "filtered" : "all"} Brands values`);
 }));
 // READ Single Brands by ID
 exports.readById = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

@@ -49,29 +49,36 @@ exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void
     const whereClause = {
         isActive: true,
     };
+    // Step 1: Fetch all suppliers with basic filters (excluding search)
+    const allSuppliers = yield prisma.supplier.findMany({
+        where: whereClause,
+        orderBy: { name: "asc" },
+        select: {
+            id: true,
+            name: true,
+            tin_id: true,
+            contact: true,
+            address: true,
+            isActive: true,
+        },
+    });
+    // Step 2: Apply search filter (post-query filtering like product service)
+    let searched = allSuppliers;
     if (search) {
-        whereClause.name = {
-            contains: search,
-        };
+        const s = search.toString().toLowerCase();
+        searched = allSuppliers.filter((supplier) => {
+            var _a, _b, _c, _d;
+            return (supplier.id.toString().includes(s) ||
+                ((_a = supplier.name) === null || _a === void 0 ? void 0 : _a.toLowerCase().includes(s)) ||
+                ((_b = supplier.tin_id) === null || _b === void 0 ? void 0 : _b.toLowerCase().includes(s)) ||
+                ((_c = supplier.contact) === null || _c === void 0 ? void 0 : _c.toLowerCase().includes(s)) ||
+                ((_d = supplier.address) === null || _d === void 0 ? void 0 : _d.toLowerCase().includes(s)));
+        });
     }
-    const [totalItems, suppliers] = yield Promise.all([
-        prisma.supplier.count({ where: whereClause }),
-        prisma.supplier.findMany({
-            where: whereClause,
-            orderBy: { name: "asc" },
-            skip,
-            take: itemsPerPage,
-            select: {
-                id: true,
-                name: true,
-                tin_id: true,
-                contact: true,
-                address: true,
-                isActive: true,
-            },
-        }),
-    ]);
+    // Step 3: Paginate
+    const totalItems = searched.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const paginated = searched.slice(skip, skip + itemsPerPage);
     const pagination = {
         currentPage: pageNumber,
         totalPages,
@@ -80,7 +87,7 @@ exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void
         hasNextPage: pageNumber < totalPages,
         hasPreviousPage: pageNumber > 1,
     };
-    (0, SuccessHandler_1.successHandler)({ suppliers, pagination }, res, "GET", `Getting ${search ? "filtered" : "all"} Supplier values`);
+    (0, SuccessHandler_1.successHandler)({ suppliers: paginated, pagination }, res, "GET", `Getting ${search ? "filtered" : "all"} Supplier values`);
 }));
 // READ Single Supplier by ID
 exports.readById = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

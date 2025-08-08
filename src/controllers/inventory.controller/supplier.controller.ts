@@ -39,35 +39,43 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
   const itemsPerPage = parseInt(limit as string, 10) || 100;
   const skip = (pageNumber - 1) * itemsPerPage;
 
-  const whereClause: any = {
+  const whereClause = {
     isActive: true,
   };
 
+  // Step 1: Fetch all suppliers with basic filters (excluding search)
+  const allSuppliers = await prisma.supplier.findMany({
+    where: whereClause,
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      tin_id: true,
+      contact: true,
+      address: true,
+      isActive: true,
+    },
+  });
+
+  // Step 2: Apply search filter (post-query filtering like product service)
+  let searched = allSuppliers;
   if (search) {
-    whereClause.name = {
-      contains: search as string,
-    };
+    const s = search.toString().toLowerCase();
+    searched = allSuppliers.filter((supplier) => {
+      return (
+        supplier.id.toString().includes(s) ||
+        supplier.name?.toLowerCase().includes(s) ||
+        supplier.tin_id?.toLowerCase().includes(s) ||
+        supplier.contact?.toLowerCase().includes(s) ||
+        supplier.address?.toLowerCase().includes(s)
+      );
+    });
   }
 
-  const [totalItems, suppliers] = await Promise.all([
-    prisma.supplier.count({ where: whereClause }),
-    prisma.supplier.findMany({
-      where: whereClause,
-      orderBy: { name: "asc" },
-      skip,
-      take: itemsPerPage,
-      select: {
-        id: true,
-        name: true,
-        tin_id: true,
-        contact: true,
-        address: true,
-        isActive: true,
-      },
-    }),
-  ]);
-
+  // Step 3: Paginate
+  const totalItems = searched.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const paginated = searched.slice(skip, skip + itemsPerPage);
 
   const pagination = {
     currentPage: pageNumber,
@@ -79,7 +87,7 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
   };
 
   successHandler(
-    { suppliers, pagination },
+    { suppliers: paginated, pagination },
     res,
     "GET",
     `Getting ${search ? "filtered" : "all"} Supplier values`

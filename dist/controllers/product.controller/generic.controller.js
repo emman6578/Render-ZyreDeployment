@@ -47,24 +47,30 @@ exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void
     const pageNumber = parseInt(page, 10) || 1;
     const itemsPerPage = parseInt(limit, 10) || 1000;
     const skip = (pageNumber - 1) * itemsPerPage;
-    const whereClause = Object.assign({ isActive: true }, (search
-        ? {
-            name: {
-                contains: search,
-            },
-        }
-        : {}));
-    // Get total count for pagination
-    const totalItems = yield prisma.generic.count({ where: whereClause });
-    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-    const response = yield prisma.generic.findMany({
+    const whereClause = {
+        isActive: true,
+    };
+    // Step 1: Fetch all generics with basic filters (excluding search)
+    const allGenerics = yield prisma.generic.findMany({
         where: whereClause,
         orderBy: {
             name: "asc",
         },
-        skip,
-        take: itemsPerPage,
     });
+    // Step 2: Apply search filter (post-query filtering like product service)
+    let searched = allGenerics;
+    if (search) {
+        const s = search.toString().toLowerCase();
+        searched = allGenerics.filter((generic) => {
+            var _a;
+            return (generic.id.toString().includes(s) ||
+                ((_a = generic.name) === null || _a === void 0 ? void 0 : _a.toLowerCase().includes(s)));
+        });
+    }
+    // Step 3: Paginate
+    const totalItems = searched.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const paginated = searched.slice(skip, skip + itemsPerPage);
     const pagination = {
         currentPage: pageNumber,
         totalPages,
@@ -73,7 +79,7 @@ exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void
         hasNextPage: pageNumber < totalPages,
         hasPreviousPage: pageNumber > 1,
     };
-    (0, SuccessHandler_1.successHandler)({ generics: response, pagination }, res, "GET", `Getting ${search ? "filtered" : "all"} generics values`);
+    (0, SuccessHandler_1.successHandler)({ generics: paginated, pagination }, res, "GET", `Getting ${search ? "filtered" : "all"} generics values`);
 }));
 // READ Single Generics by ID
 exports.readById = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

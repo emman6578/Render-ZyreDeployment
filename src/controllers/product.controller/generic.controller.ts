@@ -42,27 +42,32 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
 
   const whereClause = {
     isActive: true,
-    ...(search
-      ? {
-          name: {
-            contains: search as string,
-          },
-        }
-      : {}),
   };
 
-  // Get total count for pagination
-  const totalItems = await prisma.generic.count({ where: whereClause });
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-
-  const response = await prisma.generic.findMany({
+  // Step 1: Fetch all generics with basic filters (excluding search)
+  const allGenerics = await prisma.generic.findMany({
     where: whereClause,
     orderBy: {
       name: "asc",
     },
-    skip,
-    take: itemsPerPage,
   });
+
+  // Step 2: Apply search filter (post-query filtering like product service)
+  let searched = allGenerics;
+  if (search) {
+    const s = search.toString().toLowerCase();
+    searched = allGenerics.filter((generic) => {
+      return (
+        generic.id.toString().includes(s) ||
+        generic.name?.toLowerCase().includes(s)
+      );
+    });
+  }
+
+  // Step 3: Paginate
+  const totalItems = searched.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const paginated = searched.slice(skip, skip + itemsPerPage);
 
   const pagination = {
     currentPage: pageNumber,
@@ -74,7 +79,7 @@ export const read = expressAsyncHandler(async (req: Request, res: Response) => {
   };
 
   successHandler(
-    { generics: response, pagination },
+    { generics: paginated, pagination },
     res,
     "GET",
     `Getting ${search ? "filtered" : "all"} generics values`

@@ -51,21 +51,26 @@ exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void
     const whereClause = {
         isActive: true,
     };
+    // Step 1: Fetch all districts with basic filters (excluding search)
+    const allDistricts = yield prisma.district.findMany({
+        where: whereClause,
+        orderBy: { name: "asc" },
+    });
+    // Step 2: Apply search filter (post-query filtering like product service)
+    let searched = allDistricts;
     if (search) {
-        whereClause.name = {
-            contains: search,
-        };
+        const s = search.toString().toLowerCase();
+        searched = allDistricts.filter((district) => {
+            var _a, _b;
+            return (district.id.toString().includes(s) ||
+                ((_a = district.name) === null || _a === void 0 ? void 0 : _a.toLowerCase().includes(s)) ||
+                ((_b = district.code) === null || _b === void 0 ? void 0 : _b.toLowerCase().includes(s)));
+        });
     }
-    const [totalItems, districts] = yield Promise.all([
-        prisma.district.count({ where: whereClause }),
-        prisma.district.findMany({
-            where: whereClause,
-            orderBy: { name: "asc" },
-            skip,
-            take: itemsPerPage,
-        }),
-    ]);
+    // Step 3: Paginate
+    const totalItems = searched.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const paginated = searched.slice(skip, skip + itemsPerPage);
     const pagination = {
         currentPage: pageNumber,
         totalPages,
@@ -74,7 +79,7 @@ exports.read = (0, express_async_handler_1.default)((req, res) => __awaiter(void
         hasNextPage: pageNumber < totalPages,
         hasPreviousPage: pageNumber > 1,
     };
-    (0, SuccessHandler_1.successHandler)({ districts, pagination }, res, "GET", `Getting ${search ? "filtered" : "all"} Districts values`);
+    (0, SuccessHandler_1.successHandler)({ districts: paginated, pagination }, res, "GET", `Getting ${search ? "filtered" : "all"} Districts values`);
 }));
 // READ Single Districts by ID
 exports.readById = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
