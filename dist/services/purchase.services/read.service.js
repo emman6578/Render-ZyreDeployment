@@ -183,14 +183,21 @@ const purchase_list = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
         hasNextPage: page < totalPages,
         hasPreviousPage: page > 1,
     };
-    // Step 5: Calculate summary
+    // Step 5: Calculate summary for all ACTIVE records, regardless of current filter
     let totalInitialQuantity = 0;
     let totalCurrentQuantity = 0;
     let totalCostValue = 0;
     let totalRetailValue = 0;
     let totalOrigCostValue = 0;
     let totalOrigRetailValue = 0;
-    for (const inv of paginated) {
+    // Fetch all ACTIVE records for summary
+    const allActiveInventories = yield prisma.purchase.findMany({
+        where: { status: "ACTIVE" },
+        include: {
+            items: true,
+        },
+    });
+    for (const inv of allActiveInventories) {
         inv.items.forEach((it) => {
             var _a, _b, _c, _d;
             const initQty = (_a = it.initialQuantity) !== null && _a !== void 0 ? _a : 0;
