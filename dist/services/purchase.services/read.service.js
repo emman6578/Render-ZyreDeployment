@@ -122,6 +122,12 @@ const purchase_list = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
     const searched = allInventories.filter((inv) => {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
         const s = search.toLowerCase();
+        // Check if any item's product matches the search
+        const productMatches = inv.items.some((item) => {
+            var _a, _b, _c, _d;
+            return ((_b = (_a = item.product.generic) === null || _a === void 0 ? void 0 : _a.name) === null || _b === void 0 ? void 0 : _b.toLowerCase().includes(s)) ||
+                ((_d = (_c = item.product.brand) === null || _c === void 0 ? void 0 : _c.name) === null || _d === void 0 ? void 0 : _d.toLowerCase().includes(s));
+        });
         return (((_a = inv.batchNumber) === null || _a === void 0 ? void 0 : _a.toLowerCase().includes(s)) ||
             ((_c = (_b = inv.supplier) === null || _b === void 0 ? void 0 : _b.name) === null || _c === void 0 ? void 0 : _c.toLowerCase().includes(s)) ||
             ((_e = (_d = inv.district) === null || _d === void 0 ? void 0 : _d.name) === null || _e === void 0 ? void 0 : _e.toLowerCase().includes(s)) ||
@@ -130,7 +136,8 @@ const purchase_list = (...args_1) => __awaiter(void 0, [...args_1], void 0, func
             ((_j = inv.invoiceNumber) === null || _j === void 0 ? void 0 : _j.toLowerCase().includes(s)) ||
             ((_k = inv.receivedBy) === null || _k === void 0 ? void 0 : _k.toLowerCase().includes(s)) ||
             ((_l = inv.verifiedBy) === null || _l === void 0 ? void 0 : _l.toLowerCase().includes(s)) ||
-            ((_m = inv.referenceNumber) === null || _m === void 0 ? void 0 : _m.toLocaleLowerCase().includes(s)));
+            ((_m = inv.referenceNumber) === null || _m === void 0 ? void 0 : _m.toLowerCase().includes(s)) ||
+            productMatches);
     });
     // Step 3: Sort by a date field if specified
     const allowedSortFields = [

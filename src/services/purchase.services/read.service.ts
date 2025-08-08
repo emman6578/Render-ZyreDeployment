@@ -126,6 +126,13 @@ export const purchase_list = async (
   const searched = allInventories.filter((inv) => {
     const s = search.toLowerCase();
 
+    // Check if any item's product matches the search
+    const productMatches = inv.items.some(
+      (item) =>
+        item.product.generic?.name?.toLowerCase().includes(s) ||
+        item.product.brand?.name?.toLowerCase().includes(s)
+    );
+
     return (
       inv.batchNumber?.toLowerCase().includes(s) ||
       inv.supplier?.name?.toLowerCase().includes(s) ||
@@ -135,7 +142,8 @@ export const purchase_list = async (
       inv.invoiceNumber?.toLowerCase().includes(s) ||
       inv.receivedBy?.toLowerCase().includes(s) ||
       inv.verifiedBy?.toLowerCase().includes(s) ||
-      inv.referenceNumber?.toLocaleLowerCase().includes(s)
+      inv.referenceNumber?.toLowerCase().includes(s) ||
+      productMatches
     );
   });
 
